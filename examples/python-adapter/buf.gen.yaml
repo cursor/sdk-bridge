@@ -1,0 +1,17 @@
+# Codegen for the Python adapter example. Run `buf generate` from this
+# directory; it reads the synced contract at ../../proto and writes to ./gen
+# (gitignored).
+#
+# Uses buf's remote plugins, so no local protoc plugins are needed. The plugin
+# version is pinned so the generated code ("gencode") stays compatible with
+# the protobuf runtime pinned in requirements.txt — the runtime must be at
+# least as new as the gencode. If remote plugins are unreachable from your
+# network, see the README for an equivalent `grpcio-tools` command.
+version: v2
+inputs:
+  - directory: ../../proto
+plugins:
+  - remote: buf.build/protocolbuffers/python:v35.1
+    out: gen
+  - remote: buf.build/protocolbuffers/pyi:v35.1
+    out: gen

@@ -10,7 +10,11 @@ branch on a stable taxonomy instead of parsing free-form strings.
 
 Connect and gRPC both carry typed error details (`google.protobuf.Any` values
 keyed by type URL). Look for the detail whose type is
-`sdk.v1.SdkErrorDetails`:
+`sdk.v1.SdkErrorDetails`. Connect client libraries expose details directly;
+if you are hand-rolling the protocol, a Connect unary error is a non-200
+response with a JSON body whose `details[].value` is the unpadded base64 of
+the serialized message (see the
+[Connect error spec](https://connectrpc.com/docs/protocol#error-end-stream)):
 
 ```protobuf
 message SdkErrorDetails {

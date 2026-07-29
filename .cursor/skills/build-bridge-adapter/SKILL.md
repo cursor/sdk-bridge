@@ -7,9 +7,10 @@ description: Build a Cursor SDK bridge adapter in a new language from the sdk.v1
 
 An *adapter* spawns `cursor-sdk-bridge` and speaks the `sdk.v1` Connect
 protocol to it. This skill walks through building one from scratch. Read
-`docs/protocol.md` first; use `examples/go-adapter/` as the reference
-implementation, and keep `docs/streaming.md` / `docs/errors.md` open while
-implementing streams and error handling.
+`docs/protocol.md` first; use `examples/go-adapter/` (Connect client library)
+or `examples/python-adapter/` (hand-rolled Connect over HTTP/1.1) as the
+reference implementation, and keep `docs/streaming.md` / `docs/errors.md`
+open while implementing streams and error handling.
 
 ## Prerequisites and constraints
 
@@ -36,7 +37,8 @@ other dependencies. Commit the `buf.gen.yaml`, gitignore the `gen/` output.
 If the language has no Connect plugin, generate plain protobuf messages and
 hand-write the tiny HTTP layer (unary = one POST; server streams = the
 Connect streaming envelope: 1-byte flags + 4-byte big-endian length frames,
-end-of-stream flag `0x02`).
+end-of-stream flag `0x02`). `examples/python-adapter/main.py` does exactly
+this in ~100 lines of client code.
 
 ## Step 2 — Spawn the bridge
 

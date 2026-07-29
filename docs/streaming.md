@@ -105,3 +105,9 @@ blocks with `text` / `tool_use`), `user`, `tool_call` (status `running` /
 `completed` / `error`), `thinking`, `status`, `task`, and `usage`. Payload
 shapes match the [`@cursor/sdk` documentation](https://cursor.com/docs/sdk);
 switch on `type` and ignore unknown ones.
+
+Two `status` details worth knowing: its payload carries the lifecycle
+`status` plus `agent_id` / `run_id`, and when a run fails the human-readable
+failure text arrives in the *status* payload's `message` field — the terminal
+`RunStreamResult.error_code` can be empty for such failures, so surface the
+last `status` message when reporting errors.
