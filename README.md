@@ -27,7 +27,7 @@ integration, or a one-off script.
 | Path | Contents |
 | --- | --- |
 | `proto/sdk/v1/` | The `sdk.v1` protobuf contract. **Generated — do not edit.** Synced automatically from Cursor's internal repository on every SDK release. |
-| `proto/manifest.json` | Sync metadata: `protocol` (`"sdk.v1"`), `sdkVersion`, `sourceCommit`. |
+| `proto/manifest.json` | Sync metadata: `protocol` (`"sdk.v1"`), `sdkVersion`, `sourceRepo`, `sourceCommit`. |
 | `docs/` | The protocol guide: lifecycle, services, streaming, errors, versioning. |
 | `examples/` | Minimal adapters in other languages, each with its own `buf.gen.yaml`. |
 | `.cursor/skills/` | An agent skill that walks through building a new-language adapter. |

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package sdk.v1;
+
+import "sdk/v1/sdk_messages.proto";
+
+option csharp_namespace = "Cursor.Sdk.V1";
+option go_package = "github.com/anysphere/everysphere/anygo/proto/sdk/v1";
+option java_multiple_files = true;
+option java_package = "com.cursor.sdk.v1";
+option ruby_package = "Cursor::Sdk::V1";
+option swift_prefix = "CursorSdkV1";
+
+// Cloud-only Cursor account and catalog APIs.
+service SdkCursorService {
+  rpc Me(MeRequest) returns (MeResponse);
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
+}
+
+message CursorRequestOptions {
+  string api_key = 1;
+}
+
+message MeRequest {
+  CursorRequestOptions options = 1;
+}
+
+message MeResponse {
+  SdkUser user = 1;
+}
+
+message ListModelsRequest {
+  CursorRequestOptions options = 1;
+}
+
+message ListModelsResponse {
+  repeated SdkModel items = 1;
+}
+
+message ListRepositoriesRequest {
+  CursorRequestOptions options = 1;
+}
+
+message ListRepositoriesResponse {
+  repeated SdkRepository items = 1;
+}

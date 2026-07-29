@@ -1,0 +1,233 @@
+syntax = "proto3";
+
+package sdk.v1;
+
+import "sdk/v1/sdk_messages.proto";
+
+option csharp_namespace = "Cursor.Sdk.V1";
+option go_package = "github.com/anysphere/everysphere/anygo/proto/sdk/v1";
+option java_multiple_files = true;
+option java_package = "com.cursor.sdk.v1";
+option ruby_package = "Cursor::Sdk::V1";
+option swift_prefix = "CursorSdkV1";
+
+// Agent, run, streaming, cancellation, and artifact APIs.
+service SdkAgentService {
+  rpc CreateAgent(CreateAgentRequest) returns (CreateAgentResponse);
+  rpc ResumeAgent(ResumeAgentRequest) returns (ResumeAgentResponse);
+  rpc ReloadAgent(ReloadAgentRequest) returns (ReloadAgentResponse);
+  rpc CloseAgent(CloseAgentRequest) returns (CloseAgentResponse);
+  rpc Send(SendRequest) returns (stream RunStreamMessage);
+  rpc WaitLiveRun(WaitLiveRunRequest) returns (WaitLiveRunResponse);
+  rpc GetRun(GetRunRequest) returns (GetRunResponse);
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  rpc GetRunConversation(GetRunConversationRequest) returns (GetRunConversationResponse);
+  rpc ObserveRun(ObserveRunRequest) returns (stream RunStreamMessage);
+  rpc CancelRun(CancelRunRequest) returns (CancelRunResponse);
+  rpc GetAgent(GetAgentRequest) returns (GetAgentResponse);
+  rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+  rpc ArchiveAgent(ArchiveAgentRequest) returns (ArchiveAgentResponse);
+  rpc UnarchiveAgent(UnarchiveAgentRequest) returns (UnarchiveAgentResponse);
+  rpc DeleteAgent(DeleteAgentRequest) returns (DeleteAgentResponse);
+  rpc ListAgentMessages(ListAgentMessagesRequest) returns (ListAgentMessagesResponse);
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+  rpc DownloadArtifact(DownloadArtifactRequest) returns (stream DownloadArtifactChunk);
+  // Billed token usage and dollar cost for an agent's runs. Cloud-only for
+  // now; local agents fail with the SDK's cloud-only error.
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse);
+}
+
+message CreateAgentRequest {
+  AgentOptions options = 1;
+  optional string idempotency_key = 2;
+}
+
+message CreateAgentResponse {
+  string agent_id = 1;
+  ModelSelection model = 2;
+}
+
+message ResumeAgentRequest {
+  string agent_id = 1;
+  AgentOptions options = 2;
+}
+
+message ResumeAgentResponse {
+  string agent_id = 1;
+  ModelSelection model = 2;
+}
+
+message ReloadAgentRequest {
+  string agent_id = 1;
+}
+
+message ReloadAgentResponse {}
+
+message CloseAgentRequest {
+  string agent_id = 1;
+}
+
+message CloseAgentResponse {}
+
+message SendRequest {
+  string agent_id = 1;
+  UserMessage message = 2;
+  SendOptions options = 3;
+  optional string idempotency_key = 4;
+}
+
+message WaitLiveRunRequest {
+  string run_id = 1;
+}
+
+message WaitLiveRunResponse {
+  RunResult result = 1;
+}
+
+message GetRunRequest {
+  string run_id = 1;
+  GetRunOptions options = 2;
+}
+
+message GetRunResponse {
+  RunSnapshot run = 1;
+}
+
+message ListRunsRequest {
+  string agent_id = 1;
+  ListRunsOptions options = 2;
+}
+
+message ListRunsResponse {
+  repeated RunSnapshot items = 1;
+  string next_cursor = 2;
+}
+
+message GetRunConversationRequest {
+  string run_id = 1;
+}
+
+message GetRunConversationResponse {
+  string conversation_json = 1;
+}
+
+message ObserveRunRequest {
+  string run_id = 1;
+  optional string after_offset = 2;
+}
+
+message CancelRunRequest {
+  string run_id = 1;
+  optional string agent_id = 2;
+}
+
+message CancelRunResponse {}
+
+message GetAgentRequest {
+  string agent_id = 1;
+  AgentOperationOptions options = 2;
+}
+
+message GetAgentResponse {
+  SdkAgentInfo agent = 1;
+}
+
+message ListAgentsRequest {
+  ListAgentsOptions options = 1;
+}
+
+message ListAgentsResponse {
+  repeated SdkAgentInfo items = 1;
+  string next_cursor = 2;
+}
+
+message ArchiveAgentRequest {
+  string agent_id = 1;
+  AgentOperationOptions options = 2;
+}
+
+message ArchiveAgentResponse {}
+
+message UnarchiveAgentRequest {
+  string agent_id = 1;
+  AgentOperationOptions options = 2;
+}
+
+message UnarchiveAgentResponse {}
+
+message DeleteAgentRequest {
+  string agent_id = 1;
+  AgentOperationOptions options = 2;
+}
+
+message DeleteAgentResponse {}
+
+message ListAgentMessagesRequest {
+  string agent_id = 1;
+  GetAgentMessagesOptions options = 2;
+}
+
+message ListAgentMessagesResponse {
+  repeated AgentMessage messages = 1;
+}
+
+message ListArtifactsRequest {
+  string agent_id = 1;
+}
+
+message ListArtifactsResponse {
+  repeated SdkArtifact artifacts = 1;
+}
+
+message DownloadArtifactRequest {
+  string agent_id = 1;
+  string path = 2;
+}
+
+message GetUsageRequest {
+  string agent_id = 1;
+  // Restrict the result to a single run.
+  optional string run_id = 2;
+}
+
+message GetUsageResponse {
+  AgentUsage usage = 1;
+}
+
+message ListAgentsOptions {
+  uint32 limit = 1;
+  string cursor = 2;
+  Runtime runtime = 3;
+  string cwd = 4;
+  string pr_url = 5;
+  optional bool include_archived = 6;
+  string api_key = 7;
+}
+
+message ListRunsOptions {
+  uint32 limit = 1;
+  string cursor = 2;
+  Runtime runtime = 3;
+  string cwd = 4;
+  string api_key = 5;
+}
+
+message GetRunOptions {
+  Runtime runtime = 1;
+  string cwd = 2;
+  string agent_id = 3;
+  string api_key = 4;
+}
+
+message AgentOperationOptions {
+  string cwd = 1;
+  string api_key = 2;
+}
+
+message GetAgentMessagesOptions {
+  uint32 limit = 1;
+  uint32 offset = 2;
+  Runtime runtime = 3;
+  string cwd = 4;
+  string api_key = 5;
+}

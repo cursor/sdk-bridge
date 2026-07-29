@@ -13,7 +13,8 @@ repository. On every SDK release it:
    {
      "protocol": "sdk.v1",
      "sdkVersion": "<released version>",
-     "sourceCommit": "<internal commit>"
+     "sourceRepo": "anysphere/everysphere",
+     "sourceCommit": "<source commit>"
    }
    ```
 
