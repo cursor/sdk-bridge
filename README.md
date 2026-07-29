@@ -30,7 +30,7 @@ integration, or a one-off script.
 | `proto/manifest.json` | Sync metadata: `protocol` (`"sdk.v1"`), `sdkVersion`, `sourceRepo`, `sourceCommit`. |
 | `docs/` | The protocol guide: lifecycle, services, streaming, errors, versioning. |
 | `examples/` | Minimal adapters in other languages, each with its own `buf.gen.yaml`. |
-| `.cursor/skills/` | An agent skill that walks through building a new-language adapter. |
+| `.agents/skills/` | An agent skill that walks through building a new-language adapter. |
 
 > **Note:** `proto/` is owned by Cursor's release automation. It is deleted and
 > rewritten on every sync, and every release pushes an annotated tag `vX.Y.Z`
@@ -112,7 +112,7 @@ adapter.
 Generate code from `proto/sdk/v1` with [buf](https://buf.build) (each example
 ships a `buf.gen.yaml`), then follow the lifecycle in the docs. If you are
 using a Cursor agent to build one, point it at
-[`.cursor/skills/build-bridge-adapter/SKILL.md`](.cursor/skills/build-bridge-adapter/SKILL.md).
+[`.agents/skills/build-bridge-adapter/SKILL.md`](.agents/skills/build-bridge-adapter/SKILL.md).
 
 ## License
 
