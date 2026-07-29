@@ -10,8 +10,7 @@ The bridge is a small local server that embeds the TypeScript SDK
 (`@cursor/sdk`) as a library and exposes its full surface — creating agents,
 sending messages, streaming runs, custom tools, artifacts — over
 [Connect](https://connectrpc.com/)/gRPC-Web using the protobuf definitions in
-this repository. (The non-TypeScript SDKs invert this: the `cursor-sdk` Python
-package embeds and spawns the bridge.) An *adapter* is anything that spawns
+this repository. An *adapter* is anything that spawns
 the bridge and speaks `sdk.v1` to it: an SDK for a new language, a service
 integration, or a one-off script.
 
