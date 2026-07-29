@@ -77,6 +77,12 @@ small Connect server on loopback, tells the bridge its URL plus a bearer token
 you choose, and the bridge authenticates to *you* with that token on every
 callback. Validate it exactly like the bridge validates yours.
 
+Implementation note for hand-rolled servers: the bridge's callback requests
+are ordinary Connect unary POSTs but may arrive with
+`Transfer-Encoding: chunked` and no `Content-Length`. Minimal HTTP server
+libraries often do not decode chunked request bodies for you — handle both
+framings or callbacks will appear empty.
+
 ### `SdkCustomToolCallbackService` (`sdk_custom_tool_callback_service.proto`)
 
 Custom tools let agent code call functions defined in your adapter's language.
@@ -89,9 +95,9 @@ The split is:
   bridge calls `CallCustomTool` on your server with the `tool_name`, the
   arguments as a JSON object (`google.protobuf.Struct`), an optional
   `tool_call_id` for correlating with stream events, and the owning
-  `agent_id`. Your response's `result` Struct is returned to the agent —
-  a plain string value, a structured object, or a content envelope the SDK
-  recognizes.
+  `agent_id`. Your response's `result` is a `Struct` and therefore must be a
+  JSON **object** — wrap scalar results (for example `{"value": "..."}`) or
+  use a content envelope the SDK recognizes; a bare string cannot be encoded.
 
 Register the endpoint at launch (`--tool-callback-url` +
 `--tool-callback-auth-token`) or at runtime via
@@ -119,6 +125,23 @@ Return the operation output in `output`, or leave it unset for a null result
 configured at launch (`--store-callback-url` +
 `--store-callback-auth-token`), since agents may load state before any RPC
 arrives.
+
+The `input`/`output` objects mirror the SDK's store interface, and the
+structural rules matter more than exact fields (which follow the SDK's
+document types and may gain fields over time):
+
+- `create`/`update` inputs wrap the record under a singular key (for example
+  `{"agent": {...}}`); `get` inputs carry bare id fields (for example
+  `{"agentId": ...}`).
+- Outputs must be the **bare record object** — echoing the wrapped input
+  envelope back causes opaque internal errors in the bridge.
+- `runEvents.append` input is `{"runId", "eventType", "payload"}`.
+- `checkpoints` blobs are base64 strings: `create`/`update` input is
+  `{"agentId", "blobId", "data"}`; `get` returns `{"found": bool, "data":
+  <base64>}`.
+
+When building a store, log the live traffic from a real agent turn first —
+one `CreateAgent` + `Send` exercises most substores and methods.
 
 ## Import graph
 

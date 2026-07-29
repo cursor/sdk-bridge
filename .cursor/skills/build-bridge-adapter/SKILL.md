@@ -129,8 +129,9 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
      `message` — surface it, since `RunStreamResult.error_code` can be empty;
    - track the last non-empty `offset`; `result` then `done` end the run;
    - a dropped stream does **not** cancel the run — `Run.observe()` resumes
-     via `ObserveRun` + `after_offset`, and `wait()` falls back to
-     `WaitLiveRun`.
+     via `ObserveRun` + `after_offset` (only pass offsets that came from
+     `ObserveRun` itself; live `Send` offsets are a different numbering — see
+     `docs/streaming.md`), and `wait()` falls back to `WaitLiveRun`.
 3. Layer the conveniences on the raw event stream: assistant-text iterator,
    blocking `wait()`, terminal `text()`, `cancel()`.
 
@@ -148,7 +149,11 @@ milestones 1–4 work.
 
 These invert direction: the SDK runs a loopback Connect **server** and the
 bridge authenticates to it with a bearer token the SDK chooses. Validate that
-token on every callback, exactly as the bridge validates yours.
+token on every callback, exactly as the bridge validates yours. Gotchas that
+cost real debugging time (details in `docs/services.md`): callback POSTs may
+use chunked transfer-encoding (decode it — minimal HTTP servers often don't);
+store outputs must be the bare record, not the wrapped input envelope; tool
+results are `Struct`s, so scalar returns need wrapping in an object.
 
 - **Custom tools** — implement `SdkCustomToolCallbackService.CallCustomTool`
   (execute the named user function with the Struct args, return a Struct

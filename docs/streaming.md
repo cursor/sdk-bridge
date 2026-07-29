@@ -73,6 +73,15 @@ Keepalive frames carry no offset and must not advance your bookkeeping. Do not
 compare or order offsets — they are opaque and only valid for the run that
 produced them.
 
+Treat offsets as scoped to the **stream kind** as well as the run: resume
+`ObserveRun` only with offsets you observed from `ObserveRun` itself. Live
+`Send` streams can interleave non-durable events (status updates, deltas,
+steps) into their numbering, so a live offset may not correspond to the same
+position in the durable event log — current bridges can skip events if you
+pass one to `after_offset`. When recovering from a dropped `Send` stream,
+replay `ObserveRun` from the beginning (or from the last offset a *previous
+`ObserveRun`* gave you) and de-duplicate on your side.
+
 ## Ending a stream
 
 - **Run completes** — you receive `result`, then `done`, then a normal stream
