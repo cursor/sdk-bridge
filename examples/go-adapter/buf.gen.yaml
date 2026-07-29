@@ -1,0 +1,23 @@
+# Codegen for the Go adapter example. Run `buf generate` from this directory;
+# it reads the synced contract at ../../proto and writes to ./gen (gitignored).
+#
+# Requires protoc-gen-go and protoc-gen-connect-go on PATH:
+#   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#   go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+version: v2
+inputs:
+  - directory: ../../proto
+managed:
+  enabled: true
+  override:
+    # The synced protos carry Cursor's internal go_package; rewrite it so the
+    # generated code lives inside this example module.
+    - file_option: go_package_prefix
+      value: github.com/cursor/sdk-bridge/examples/go-adapter/gen
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: gen
+    opt: paths=source_relative
