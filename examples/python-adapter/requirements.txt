@@ -1,0 +1,3 @@
+# The protobuf runtime must be at least as new as the gencode produced by the
+# plugin version pinned in buf.gen.yaml (protoc v35.x -> runtime >= 7.35).
+protobuf>=7.35,<8
