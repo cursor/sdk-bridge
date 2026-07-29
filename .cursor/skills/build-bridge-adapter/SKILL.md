@@ -7,10 +7,10 @@ description: Build a Cursor SDK bridge adapter in a new language from the sdk.v1
 
 An *adapter* spawns `cursor-sdk-bridge` and speaks the `sdk.v1` Connect
 protocol to it. This skill walks through building one from scratch. Read
-`docs/protocol.md` first; use `examples/go-adapter/` (Connect client library)
-or `examples/python-adapter/` (hand-rolled Connect over HTTP/1.1) as the
-reference implementation, and keep `docs/streaming.md` / `docs/errors.md`
-open while implementing streams and error handling.
+`docs/protocol.md` first; use `examples/python-adapter/` (hand-rolled Connect
+over HTTP/1.1 on the standard library) as the reference implementation, and
+keep `docs/streaming.md` / `docs/errors.md` open while implementing streams
+and error handling.
 
 ## Prerequisites and constraints
 
@@ -27,12 +27,13 @@ open while implementing streams and error handling.
 
 ## Step 1 — Codegen
 
-Copy `examples/go-adapter/buf.gen.yaml` as a template: keep
-`inputs: [directory: ../../proto]`, swap the plugins for the target
-language's protobuf + Connect plugins, and use `managed` mode to override
-language package options (the synced protos carry Cursor-internal `go_package`
-etc.). Only `sdk/v1/*.proto` and Google well-known types are involved; no
-other dependencies. Commit the `buf.gen.yaml`, gitignore the `gen/` output.
+Copy `examples/python-adapter/buf.gen.yaml` as a template: keep
+`inputs: [directory: ../../proto]` and swap the plugins for the target
+language's protobuf + Connect plugins. For compiled languages, use buf's
+`managed` mode to override language package options — the synced protos carry
+Cursor-internal values for `go_package`, `java_package`, and friends. Only
+`sdk/v1/*.proto` and Google well-known types are involved; no other
+dependencies. Commit the `buf.gen.yaml`, gitignore the `gen/` output.
 
 If the language has no Connect plugin, generate plain protobuf messages and
 hand-write the tiny HTTP layer (unary = one POST; server streams = the

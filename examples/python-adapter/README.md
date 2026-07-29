@@ -10,12 +10,12 @@ A minimal, complete `sdk.v1` adapter in Python. It:
 5. creates a local agent, sends one message, and streams the run to stdout;
 6. shuts the bridge down gracefully.
 
-Unlike the Go example, the RPC layer is hand-rolled: plain protobuf codegen
-plus a small Connect-over-HTTP/1.1 client on the standard library (`urllib`).
-The bridge's protocol is simple enough — unary RPCs are single POSTs, server
-streams are enveloped frames — that this keeps the example to one runtime
-dependency (`protobuf`) and makes the wire protocol visible in the code. A
-[connect-python](https://connectrpc.com/) client works just as well if you
+The RPC layer is hand-rolled: plain protobuf codegen plus a small
+Connect-over-HTTP/1.1 client on the standard library (`urllib`). The bridge's
+protocol is simple enough — unary RPCs are single POSTs, server streams are
+enveloped frames — that this keeps the example to one runtime dependency
+(`protobuf`) and makes the wire protocol visible in the code. A
+[Connect](https://connectrpc.com/) client library works just as well if you
 prefer generated stubs. Either way, classic gRPC clients will not work — the
 bridge is HTTP/1.1 only (see [`docs/protocol.md`](../../docs/protocol.md)).
 

@@ -95,10 +95,9 @@ TypeScript SDK itself.
 5. Call `SdkBridgeControlService.Ping` to confirm the connection, then use
    `SdkAgentService` to create an agent and stream a run.
 
-See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle, and
-[`examples/go-adapter/`](examples/go-adapter/) (connect-go) or
-[`examples/python-adapter/`](examples/python-adapter/) (stdlib-only,
-hand-rolled Connect client) for complete working adapters.
+See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle and
+[`examples/python-adapter/`](examples/python-adapter/) for a complete working
+adapter.
 
 ## Documentation
 
