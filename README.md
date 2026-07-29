@@ -15,10 +15,10 @@ the bridge and speaks `sdk.v1` to it: an SDK for a new language, a service
 integration, or a one-off script.
 
 ```text
-┌────────────────┐  spawn + Connect RPCs   ┌────────────────────┐   HTTPS    ┌─────────────┐
+┌────────────────-┐  spawn + Connect RPCs   ┌────────────────────┐   HTTPS    ┌─────────────┐
 │  your adapter   │ ──────────────────────► │  cursor-sdk-bridge │ ─────────► │ Cursor API  │
 │  (any language) │ ◄────────────────────── │  (local process)   │            │             │
-└────────────────┘   callback RPCs (tools,  └────────────────────┘            └─────────────┘
+└────────────────-┘  callback RPCs (tools,  └────────────────────┘            └─────────────┘
                      custom stores)
 ```
 
