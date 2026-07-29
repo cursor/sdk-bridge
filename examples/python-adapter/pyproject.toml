@@ -1,0 +1,16 @@
+# Example packaging metadata. This adapter is not published; a real
+# distribution would also bundle the generated sdk.v1 modules (gen/) and the
+# per-platform bridge archive instead of expecting them alongside the source.
+[project]
+name = "cursor-adapter-example"
+version = "0.1.0"
+description = "Example Python SDK (adapter) for the Cursor SDK bridge"
+requires-python = ">=3.10"
+dependencies = ["protobuf>=7.35,<8"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["cursor_adapter"]
