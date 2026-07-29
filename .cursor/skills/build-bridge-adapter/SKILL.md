@@ -1,16 +1,49 @@
 ---
 name: build-bridge-adapter
-description: Build a Cursor SDK bridge adapter in a new language from the sdk.v1 protos — codegen, spawning the bridge, the ready-line handshake, bearer auth, running a first agent turn, and the adapter-side callback services. Use when asked to build, port, or debug an adapter/SDK/client for the Cursor SDK bridge in any language.
+description: Build a full Cursor SDK for a new language on top of the sdk.v1 bridge protocol — codegen, managed bridge lifecycle, client/agent/run API design, streaming, errors, and the adapter-side callback services. Use when asked to build, port, extend, or debug an adapter/SDK/client for the Cursor SDK bridge in any language.
 ---
 
-# Build a bridge adapter in a new language
+# Build a Cursor SDK for a new language
 
 An *adapter* spawns `cursor-sdk-bridge` and speaks the `sdk.v1` Connect
-protocol to it. This skill walks through building one from scratch. Read
-`docs/protocol.md` first; use `examples/python-adapter/` (hand-rolled Connect
-over HTTP/1.1 on the standard library) as the reference implementation, and
-keep `docs/streaming.md` / `docs/errors.md` open while implementing streams
-and error handling.
+protocol to it. The end state of this skill is not a demo script but a real
+SDK: a library another developer can install and use to script Cursor agents
+without knowing the bridge exists. Read `docs/protocol.md` first;
+`examples/python-adapter/` shows the raw protocol mechanics (spawn, handshake,
+wire format) that your SDK will wrap, and `docs/streaming.md` /
+`docs/errors.md` cover streams and failures.
+
+## The target architecture
+
+Cursor's official SDKs converge on the same shape. Aim for it, adapted to
+your language's idioms:
+
+| Component | Responsibility |
+| --- | --- |
+| **Bridge manager** | Locate the bridge (env override → bundled/downloaded archive), spawn it, perform the ready-line handshake, expose the endpoint, shut it down (RPC → wait → kill). One managed bridge per client, created lazily on first use; also allow attaching to an externally supplied endpoint. |
+| **Transport** | Connect-over-HTTP/1.1 client: unary POSTs and server-stream framing, bearer auth on every request, translation of Connect errors into your error types. Generated stubs or hand-rolled (see `examples/python-adapter/`). |
+| **`Client`** | Owns the bridge manager + transport. Typed low-level methods mirroring `SdkAgentService` (`create_agent`, `send`, `wait_live_run`, `observe_run`, `cancel_run`, `list_agents`, ...). Everything else builds on it. |
+| **`Agent` handle** | `create(options)` / `resume(id)` / `get` / `list` constructors; `send(message) -> Run`; `close`, `archive`, `delete`; custom-tool registration. Holds `agent_id` + model. |
+| **`Run` handle** | The streaming surface: iterate events; convenience accessors (assistant text iterator, blocking `wait()` → result, terminal `text()`); `observe(after_offset)` for resume; `cancel()`. Tracks the last seen `offset`. |
+| **`Cursor` catalog** | `me()`, `models()`, `repositories()` from `SdkCursorService`. |
+| **Errors** | One base error plus a taxonomy mapped from Connect codes + `SdkErrorDetails.sdk_error_code` (auth, not-found, rate-limit, busy, validation, ...). Preserve `request_id`, `retry_after`, `rate_limit` on the error object. |
+| **Callback servers** | Optional loopback Connect servers implementing `SdkCustomToolCallbackService` and `SdkStoreCallbackService`, so users can define tools and stores in your language. |
+
+A north-star usage sketch (translate to your language):
+
+```python
+client = Client()                       # spawns/attaches the bridge lazily
+agent = client.agents.create(model="composer-2", local={"cwd": ["/repo"]})
+run = agent.send("Summarize this repository.")
+for text in run.iter_text():
+    print(text)
+result = run.wait()
+agent.close()
+client.close()                          # shuts the bridge down
+```
+
+Plus a one-liner for the simplest case (`prompt(...)`: create → send → wait →
+close) and a context-manager/`defer`/RAII form so the bridge can never leak.
 
 ## Prerequisites and constraints
 
@@ -25,7 +58,10 @@ and error handling.
 - Running a real turn needs a `CURSOR_API_KEY`
   ([cursor.com/dashboard](https://cursor.com/dashboard)).
 
-## Step 1 — Codegen
+Work through the milestones below **in order**, and keep a runnable
+demo/test at every milestone — each one builds on a verified previous layer.
+
+## Milestone 1 — Codegen
 
 Copy `examples/python-adapter/buf.gen.yaml` as a template: keep
 `inputs: [directory: ../../proto]` and swap the plugins for the target
@@ -38,74 +74,89 @@ dependencies. Commit the `buf.gen.yaml`, gitignore the `gen/` output.
 If the language has no Connect plugin, generate plain protobuf messages and
 hand-write the tiny HTTP layer (unary = one POST; server streams = the
 Connect streaming envelope: 1-byte flags + 4-byte big-endian length frames,
-end-of-stream flag `0x02`). `examples/python-adapter/main.py` does exactly
-this in ~100 lines of client code.
+end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
+`examples/python-adapter/main.py` does exactly this in ~100 lines.
 
-## Step 2 — Spawn the bridge
+## Milestone 2 — Bridge manager
 
-- Get a bridge: download
-  `https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`
-  (os: `linux|darwin|win32`, arch: `x64|arm64`) and unpack; the launcher is
-  `cursor-sdk-bridge/bin/cursor-sdk-bridge` (`.cmd` on Windows). For dev
-  machines also honor a `CURSOR_SDK_BRIDGE_BIN` override.
-- Spawn it with `CURSOR_API_KEY` in the environment, plus
-  `--workspace <dir>` for local agents. Set
-  `CURSOR_SDK_CLIENT_LANGUAGE=<language>` so traffic is attributable.
-- Capture **stderr** (keep draining it forever — a full pipe blocks the
-  bridge).
+- Locate the bridge: an env override such as `CURSOR_SDK_BRIDGE_BIN` first,
+  then your package's bundled/downloaded archive
+  (`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`,
+  os: `linux|darwin|win32`, arch: `x64|arm64`; launcher at
+  `cursor-sdk-bridge/bin/cursor-sdk-bridge`, `.cmd` on Windows).
+- Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
+  local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
+- Handshake: capture **stderr**, scan for the literal prefix
+  `cursor-sdk-bridge ready ` (trailing space), parse the JSON after it,
+  validate `schemaVersion == 1`, `transport == "tcp"`,
+  `protocol == "connect"`, ignore unknown fields. Apply a ~30s startup
+  timeout; if the process exits first, surface its captured stderr. Keep
+  draining stderr forever afterwards — a full pipe blocks the bridge. Never
+  log the raw discovery line (older bridges inline the token).
+- Read the bearer token from the `authTokenFile` path, trimmed.
+- Shutdown: `SdkBridgeControlService.Shutdown` (or SIGTERM), wait ~5s, then
+  kill. Make this run on client close *and* on interpreter/process exit so a
+  crashed caller cannot leak bridges.
+- Support attaching to an already-running bridge (explicit URL + token) —
+  useful for tests and for hosts that manage the process themselves.
 
-## Step 3 — The handshake
+## Milestone 3 — Transport, auth, and errors
 
-Scan stderr lines for the literal prefix `cursor-sdk-bridge ready ` (trailing
-space). Parse the remainder as JSON and validate `schemaVersion == 1`,
-`transport == "tcp"`, `protocol == "connect"`; reject otherwise, ignore
-unknown fields. Apply a ~30s startup timeout; if the process exits first,
-surface the captured stderr. Then read the bearer token from the
-`authTokenFile` path and trim whitespace. Never log the raw discovery line
-(older bridges inline the token).
+- Send `Authorization: Bearer <token>` on **every** request — unary *and*
+  streaming (a common bug: interceptor APIs often cover only unary).
+  Missing/wrong token ⇒ `UNAUTHENTICATED`.
+- Verify with `SdkBridgeControlService.Ping`, then `GetVersion` (expect
+  `protocol_version == "sdk.v1"`; capabilities gate optional features).
+- Build the error layer now, not last: decode `sdk.v1.SdkErrorDetails` from
+  failed RPCs (`docs/errors.md` has the taxonomy and wire encoding) and map
+  `sdk_error_code` + Connect code onto your language's exception/error
+  hierarchy. Expose the full `request_id`, `retry_after`, and `rate_limit`.
+  Parse protobuf JSON with unknown-field tolerance everywhere.
 
-## Step 4 — Auth and first RPCs
-
-Send `Authorization: Bearer <token>` on **every** request — unary *and*
-streaming (a common bug: language interceptor APIs often cover only unary).
-Missing/wrong token ⇒ `UNAUTHENTICATED`.
-
-Verify with `SdkBridgeControlService.Ping`, then `GetVersion` (expect
-`protocol_version == "sdk.v1"`; capabilities gate optional features).
-
-## Step 5 — First agent turn
+## Milestone 4 — First turn: `Agent.send` → `Run`
 
 1. `SdkAgentService.CreateAgent` with `options.local.cwd = ["<workspace>"]`
    and an explicit `options.model` — local agents require one; discover IDs
-   via `SdkCursorService.ListModels`.
-2. `SdkAgentService.Send` with the `agent_id` and a `UserMessage{text}`.
-3. Consume the `RunStreamMessage` stream per `docs/streaming.md`:
+   via `SdkCursorService.ListModels` (catalog calls **require** a per-call
+   `api_key`; there is no env fallback).
+2. `SdkAgentService.Send` with the `agent_id` and a `UserMessage{text}`;
+   wrap the server stream in your `Run` handle per `docs/streaming.md`:
    - dispatch on the `envelope` oneof; **ignore** messages with no case set
      (keepalives) and unknown cases;
    - `sdk_message`: dispatch on `type` (`system`, `assistant`, `tool_call`,
-     ...); payloads are JSON objects (`google.protobuf.Struct`);
-   - `result` then `done` end the run; a dropped stream does **not** cancel
-     the run — resume with `ObserveRun` + the last seen `offset`.
-4. Shut down: `SdkBridgeControlService.Shutdown` (or SIGTERM), wait ~5s,
-   then kill.
+     `status`, ...); payloads are JSON objects (`google.protobuf.Struct`).
+     On failure the human-readable reason arrives in the `status` payload's
+     `message` — surface it, since `RunStreamResult.error_code` can be empty;
+   - track the last non-empty `offset`; `result` then `done` end the run;
+   - a dropped stream does **not** cancel the run — `Run.observe()` resumes
+     via `ObserveRun` + `after_offset`, and `wait()` falls back to
+     `WaitLiveRun`.
+3. Layer the conveniences on the raw event stream: assistant-text iterator,
+   blocking `wait()`, terminal `text()`, `cancel()`.
 
-## Step 6 — Error handling
+## Milestone 5 — Management surface and catalog
 
-Decode the `sdk.v1.SdkErrorDetails` error detail from failed RPCs and expose
-`sdk_error_code`, the full `request_id`, `retry_after`, and `rate_limit` to
-callers (`docs/errors.md` has the taxonomy). Parse protobuf JSON with
-unknown-field tolerance everywhere.
+Fill out the rest of `SdkAgentService` on `Client`/`Agent`: `ResumeAgent`,
+`GetAgent`/`ListAgents` (pagination cursors), `ArchiveAgent`/`Unarchive`/
+`Delete`/`Close`, `ListRuns`/`GetRun`/`GetRunConversation`,
+`ListAgentMessages`, artifacts (`ListArtifacts` + chunked
+`DownloadArtifact`), `GetUsage` (cloud only), and the `Cursor` catalog
+(`Me`, `ListModels`, `ListRepositories`). These are mechanical once
+milestones 1–4 work.
 
-## Step 7 — Callback services (optional, for custom tools / stores)
+## Milestone 6 — Callback services (custom tools / stores)
 
-These invert direction: the adapter runs a loopback Connect **server** and the
-bridge authenticates to it with a bearer token the adapter chooses.
+These invert direction: the SDK runs a loopback Connect **server** and the
+bridge authenticates to it with a bearer token the SDK chooses. Validate that
+token on every callback, exactly as the bridge validates yours.
 
 - **Custom tools** — implement `SdkCustomToolCallbackService.CallCustomTool`
-  (execute the named tool with the Struct args, return a Struct result).
-  Declare tool metadata in `LocalAgentOptions.custom_tools` on CreateAgent;
-  register the server via `--tool-callback-url`/`--tool-callback-auth-token`
-  or `SdkBridgeControlService.SetToolCallback`.
+  (execute the named user function with the Struct args, return a Struct
+  result). Declare tool metadata in `LocalAgentOptions.custom_tools` on
+  CreateAgent; register the server via
+  `--tool-callback-url`/`--tool-callback-auth-token` or
+  `SdkBridgeControlService.SetToolCallback`. Design the user-facing API as
+  "register a function with a schema", not "implement an RPC service".
 - **Custom stores** — implement `SdkStoreCallbackService.CallStore`
   (substores `agents|runs|runEvents|checkpoints`; methods
   `get|create|update|delete|list|append`; checkpoint blobs are base64).
@@ -113,16 +164,29 @@ bridge authenticates to it with a bearer token the adapter chooses.
   `--local-store '{"type":"custom"}'`) plus
   `--store-callback-url`/`--store-callback-auth-token` (launch-time only).
 
-Validate the bridge's bearer token on every callback, exactly as the bridge
-validates yours.
-
 ## Verification checklist
 
-- [ ] Handshake: ready line parsed, token read from file, `Ping` succeeds.
-- [ ] A missing `Authorization` header fails with `UNAUTHENTICATED`.
-- [ ] One full turn: `CreateAgent` → `Send` → assistant output → `result` →
-      `done`, against a real `CURSOR_API_KEY`.
+Functional (run against a real bridge):
+
+- [ ] Handshake: ready line parsed, token read from file, `Ping` succeeds;
+      startup timeout and exit-before-ready both produce useful errors.
+- [ ] A request without `Authorization` fails with `UNAUTHENTICATED`, and it
+      maps to your auth error type.
+- [ ] One full turn through the public API (`client → agent → run`): stream
+      yields events, terminal result observed, against a real
+      `CURSOR_API_KEY`.
 - [ ] Keepalive frames (empty envelope) are ignored; a >15s tool pause does
-      not break the stream.
-- [ ] Bridge exits cleanly on `Shutdown`; adapter kills it on timeout.
-- [ ] Failed RPCs surface `sdk_error_code` and full `request_id`.
+      not break the stream; unknown envelope cases and `SdkMessage.type`s are
+      skipped silently.
+- [ ] Bridge exits cleanly on client close; killed on timeout; no orphan
+      process after the host program exits or crashes.
+- [ ] Failed RPCs surface `sdk_error_code` and the full `request_id`.
+
+API quality (review against the architecture table):
+
+- [ ] A newcomer can run one prompt in ≤5 lines without touching proto types.
+- [ ] Raw proto/transport types do not leak into the public API surface.
+- [ ] `Run` supports both incremental consumption and fire-and-`wait()`.
+- [ ] Errors are catchable by class, not by string matching.
+- [ ] The bridge process is invisible in the happy path and controllable
+      (endpoint attach, custom binary path) when needed.
