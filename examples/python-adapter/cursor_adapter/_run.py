@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from google.protobuf import json_format
 
-from ._errors import CursorSdkError, TransportError
+from ._errors import CursorSdkError, RpcError, TransportError
 from ._proto import agent_pb2, messages_pb2
 
 if TYPE_CHECKING:
@@ -107,22 +107,31 @@ class Run:
         self.last_offset: str | None = None
         self.result: RunResult | None = None
         self._stream: Iterator[messages_pb2.RunStreamMessage] | None = stream
+        self._stream_error: CursorSdkError | None = None
         self._last_status_message = ""
 
     def __iter__(self) -> Iterator[RunEvent]:
         return self.events()
 
     def events(self) -> Iterator[RunEvent]:
-        """Yield events from the live stream until the run completes."""
+        """Yield events from the live stream until the run completes.
+
+        Stream failures are recorded before propagating so a later
+        ``wait()`` can still recover the terminal result server-side.
+        """
         stream, self._stream = self._stream, None
         if stream is None:
             return
-        for message in stream:
-            event = self._ingest(message, track_offset=True)
-            if event is not None:
-                yield event
-            if message.WhichOneof("envelope") == "done":
-                return
+        try:
+            for message in stream:
+                event = self._ingest(message, track_offset=True)
+                if event is not None:
+                    yield event
+                if message.WhichOneof("envelope") == "done":
+                    return
+        except (TransportError, RpcError) as err:
+            self._stream_error = err
+            raise
 
     def _ingest(
         self, message: messages_pb2.RunStreamMessage, track_offset: bool
@@ -180,28 +189,33 @@ class Run:
     def wait(self) -> RunResult:
         """Block until the run is terminal and return its result.
 
-        Drains any unconsumed live events; if the live stream drops, falls
-        back to ``WaitLiveRun`` (the run keeps executing server-side).
+        Drains any unconsumed live events. A dropped or failed live stream
+        does not cancel the run, so whenever the stream ended without a
+        terminal result — including when a caller's own iteration already
+        raised — this falls back to ``WaitLiveRun``.
         """
         if self.result is None:
             try:
                 for _ in self.events():
                     pass
-            except TransportError:
-                if self.run_id is None:
-                    raise
-                response = self._client._rpc.unary(
-                    "SdkAgentService",
-                    "WaitLiveRun",
-                    agent_pb2.WaitLiveRunRequest(run_id=self.run_id),
-                    agent_pb2.WaitLiveRunResponse,
-                    timeout=None,
-                )
-                self.result = result_from_proto(
-                    response.result, error_message=self._last_status_message or None
-                )
+            except (TransportError, RpcError):
+                pass  # Recorded by events(); recovered below when possible.
         if self.result is None:
-            raise TransportError("run stream ended without a terminal result")
+            if self.run_id is None:
+                # Nothing to recover with; surface what broke the stream.
+                raise self._stream_error or TransportError(
+                    "run stream ended without a terminal result or run_id"
+                )
+            response = self._client._rpc.unary(
+                "SdkAgentService",
+                "WaitLiveRun",
+                agent_pb2.WaitLiveRunRequest(run_id=self.run_id),
+                agent_pb2.WaitLiveRunResponse,
+                timeout=None,
+            )
+            self.result = result_from_proto(
+                response.result, error_message=self._last_status_message or None
+            )
         return self.result
 
     def text(self) -> str:

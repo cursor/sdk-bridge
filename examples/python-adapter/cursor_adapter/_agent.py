@@ -51,16 +51,25 @@ class Agent:
         return Run(self._client, self.id, stream)
 
     def runs(self, limit: int = 0) -> list[RunResult]:
-        """List this agent's runs as point-in-time snapshots."""
-        response = self._client._rpc.unary(
-            "SdkAgentService",
-            "ListRuns",
-            agent_pb2.ListRunsRequest(
-                agent_id=self.id, options=agent_pb2.ListRunsOptions(limit=limit)
-            ),
-            agent_pb2.ListRunsResponse,
-        )
-        return [result_from_proto(snapshot) for snapshot in response.items]
+        """List this agent's runs as point-in-time snapshots, following
+        pagination cursors until exhausted (or ``limit`` items when it is
+        non-zero)."""
+        items: list[RunResult] = []
+        cursor = ""
+        while True:
+            response = self._client._rpc.unary(
+                "SdkAgentService",
+                "ListRuns",
+                agent_pb2.ListRunsRequest(
+                    agent_id=self.id,
+                    options=agent_pb2.ListRunsOptions(limit=limit, cursor=cursor),
+                ),
+                agent_pb2.ListRunsResponse,
+            )
+            items.extend(result_from_proto(snapshot) for snapshot in response.items)
+            cursor = response.next_cursor
+            if not cursor or (limit and len(items) >= limit):
+                return items[:limit] if limit else items
 
     def close(self) -> None:
         """Release local resources. Durable state is kept."""
