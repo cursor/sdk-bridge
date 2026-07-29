@@ -97,7 +97,8 @@ TypeScript SDK itself.
 
 See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle and
 [`examples/python-adapter/`](examples/python-adapter/) for a complete working
-adapter.
+adapter — a miniature Python SDK with `Client` / `Agent` / `Run` handles
+built on this protocol.
 
 ## Documentation
 

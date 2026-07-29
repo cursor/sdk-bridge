@@ -9,9 +9,10 @@ An *adapter* spawns `cursor-sdk-bridge` and speaks the `sdk.v1` Connect
 protocol to it. The end state of this skill is not a demo script but a real
 SDK: a library another developer can install and use to script Cursor agents
 without knowing the bridge exists. Read `docs/protocol.md` first;
-`examples/python-adapter/` shows the raw protocol mechanics (spawn, handshake,
-wire format) that your SDK will wrap, and `docs/streaming.md` /
-`docs/errors.md` cover streams and failures.
+`examples/python-adapter/` is a working miniature of the target shape — one
+module per architecture-table component, over a hand-rolled transport that
+keeps the wire format visible — and `docs/streaming.md` / `docs/errors.md`
+cover streams and failures.
 
 ## The target architecture
 
@@ -75,7 +76,8 @@ If the language has no Connect plugin, generate plain protobuf messages and
 hand-write the tiny HTTP layer (unary = one POST; server streams = the
 Connect streaming envelope: 1-byte flags + 4-byte big-endian length frames,
 end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
-`examples/python-adapter/main.py` does exactly this in ~100 lines.
+`examples/python-adapter/cursor_adapter/_transport.py` does exactly this in
+~100 lines.
 
 ## Milestone 2 — Bridge manager
 
