@@ -6,10 +6,12 @@ from any language, without depending on the TypeScript
 ([`@cursor/sdk`](https://www.npmjs.com/package/@cursor/sdk)) or Python
 ([`cursor-sdk`](https://pypi.org/project/cursor-sdk/)) SDKs directly.
 
-The bridge is a small local server that wraps `@cursor/sdk` and exposes the
-full SDK surface — creating agents, sending messages, streaming runs, custom
-tools, artifacts — over [Connect](https://connectrpc.com/)/gRPC-Web using the
-protobuf definitions in this repository. An *adapter* is anything that spawns
+The bridge is a small local server that embeds the TypeScript SDK
+(`@cursor/sdk`) as a library and exposes its full surface — creating agents,
+sending messages, streaming runs, custom tools, artifacts — over
+[Connect](https://connectrpc.com/)/gRPC-Web using the protobuf definitions in
+this repository. (The non-TypeScript SDKs invert this: the `cursor-sdk` Python
+package embeds and spawns the bridge.) An *adapter* is anything that spawns
 the bridge and speaks `sdk.v1` to it: an SDK for a new language, a service
 integration, or a one-off script.
 
@@ -94,8 +96,10 @@ TypeScript SDK itself.
 5. Call `SdkBridgeControlService.Ping` to confirm the connection, then use
    `SdkAgentService` to create an agent and stream a run.
 
-See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle and
-[`examples/go-adapter/`](examples/go-adapter/) for a complete working adapter.
+See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle, and
+[`examples/go-adapter/`](examples/go-adapter/) (connect-go) or
+[`examples/python-adapter/`](examples/python-adapter/) (stdlib-only,
+hand-rolled Connect client) for complete working adapters.
 
 ## Documentation
 
