@@ -34,7 +34,8 @@ integration, or a one-off script.
 
 > **Note:** `proto/` is owned by Cursor's release automation. It is deleted and
 > rewritten on every sync, and every release pushes an annotated tag `vX.Y.Z`
-> matching the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull
+> matching the released `@cursor/sdk` npm / `cursor-sdk` PyPI version and
+> publishes a GitHub release with the standalone bridge archives attached. Pull
 > requests must never touch `proto/`. If the directory is missing, the first
 > sync has not run yet.
 
@@ -55,22 +56,27 @@ Google well-known types:
 
 ## Getting the bridge
 
-Prebuilt standalone archives are published for every release:
+Prebuilt standalone bridge archives are attached to every
+[release of this repository](https://github.com/cursor/sdk-bridge/releases).
+Download the archive for your platform from the
+[latest release](https://github.com/cursor/sdk-bridge/releases/latest):
 
 ```text
-https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz
+cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz
 ```
 
-- `<version>` — the released SDK version (matches this repo's `vX.Y.Z` tags)
 - `<os>` — `linux` | `darwin` | `win32`
 - `<arch>` — `x64` | `arm64` (win32 is `x64` only)
 
-Each archive unpacks to a `cursor-sdk-bridge/` directory containing:
+Each release also attaches a `SHA256SUMS.txt` for verifying downloads, and
+its tag `vX.Y.Z` matches the released SDK version — to pin one, download
+from that tag's release page instead of `latest`.
 
-- `bin/cursor-sdk-bridge` (or `bin\cursor-sdk-bridge.cmd` on Windows) — the launcher
+Each archive unpacks in place (no top-level directory) to:
+
+- `bin/cursor-sdk-bridge` (`bin\cursor-sdk-bridge.exe` on Windows) — the self-contained bridge executable
 - `manifest.json` — `bridgeVersion`, `sdkVersion`, `os`, `arch`, `entrypoint`, `protocol` (`"sdk.v1"`)
 - `proto/sdk/v1/` — the exact proto contract this bridge implements
-- a bundled Node.js runtime plus the npm-published `@cursor/sdk`
 
 The bridge is also embedded in the `cursor-sdk` Python wheels on PyPI (one
 wheel per platform), and `@cursor/sdk` on npm is the entry point for the
@@ -78,8 +84,9 @@ TypeScript SDK itself.
 
 ## Quickstart: spawn and handshake
 
-1. Spawn `bin/cursor-sdk-bridge` with `CURSOR_API_KEY` set in its environment
-   (create a key at [cursor.com/dashboard](https://cursor.com/dashboard)).
+1. Spawn `bin/cursor-sdk-bridge` (from the unpacked latest-release archive)
+   with `CURSOR_API_KEY` set in its environment (create a key at
+   [cursor.com/dashboard](https://cursor.com/dashboard)).
 2. Read the bridge's **stderr** until a line starting with the literal prefix
    `cursor-sdk-bridge ready ` appears. The rest of the line is JSON:
 

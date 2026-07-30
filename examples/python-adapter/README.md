@@ -86,14 +86,15 @@ pip install -r requirements.txt
 ## 3. Get the bridge
 
 ```bash
-./fetch-bridge.sh <version>   # e.g. ./fetch-bridge.sh 1.0.26
+./fetch-bridge.sh             # latest release
+./fetch-bridge.sh 1.0.26      # or pin a version (this repo's vX.Y.Z tags)
 ```
 
-This downloads the archive for your OS/arch from
-`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`
-and unpacks it to `./cursor-sdk-bridge/`. Alternatively, point the SDK at
-any existing bridge launcher with `CURSOR_SDK_BRIDGE_BIN` (or
-`Client(bridge_bin=...)`).
+This downloads the standalone archive for your OS/arch
+(`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz`) from this repository's
+[GitHub releases](https://github.com/cursor/sdk-bridge/releases) and unpacks
+it to `./cursor-sdk-bridge/`. Alternatively, point the SDK at any existing
+bridge executable with `CURSOR_SDK_BRIDGE_BIN` (or `Client(bridge_bin=...)`).
 
 ## 4. Run one agent turn
 

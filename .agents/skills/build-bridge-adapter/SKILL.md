@@ -82,10 +82,12 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
 ## Milestone 2 — Bridge manager
 
 - Locate the bridge: an env override such as `CURSOR_SDK_BRIDGE_BIN` first,
-  then your package's bundled/downloaded archive
-  (`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`,
-  os: `linux|darwin|win32`, arch: `x64|arm64`; launcher at
-  `cursor-sdk-bridge/bin/cursor-sdk-bridge`, `.cmd` on Windows).
+  then your package's bundled/downloaded archive. Standalone archives are
+  attached to this repo's GitHub releases
+  (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` on
+  <https://github.com/cursor/sdk-bridge/releases/latest>, os:
+  `linux|darwin|win32`, arch: `x64|arm64`; tags `vX.Y.Z` pin versions). Each
+  unpacks flat: the executable is `bin/cursor-sdk-bridge`, `.exe` on Windows.
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
 - Handshake: capture **stderr**, scan for the literal prefix
