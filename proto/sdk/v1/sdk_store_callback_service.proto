@@ -11,30 +11,31 @@ option java_package = "com.cursor.sdk.v1";
 option ruby_package = "Cursor::Sdk::V1";
 option swift_prefix = "CursorSdkV1";
 
-// Local agent-store callbacks from the bridge to a host process.
+// Store callbacks from the Node bridge to a Python (or other) host process.
 //
-// When LocalAgentStoreConfig.type is "custom", the bridge forwards store
-// operations to the host over a single CallStore RPC. Substores mirror the
-// local agent store topology: agents, runs, runEvents, and checkpoints.
-// Inputs and outputs are structured JSON so the full surface can be forwarded
-// without a typed message per operation.
+// The bridge forwards local-agent-store operations to the host over a single
+// generic `CallStore` RPC, mirroring the `@cursor/sdk` `LocalAgentStore`
+// topology (substores: agents, runs, runEvents, checkpoints). Inputs/outputs
+// are structured JSON so the bridge can forward the full surface without a
+// typed message per operation. This powers `local.store` type "custom", where
+// every substore is implemented by the host process.
 service SdkStoreCallbackService {
   rpc CallStore(CallStoreRequest) returns (CallStoreResponse);
 }
 
-// Generic local agent-store operation forwarded to a host-owned substore.
+// Generic LocalAgentStore operation forwarded to a host-owned substore.
 message CallStoreRequest {
   // Substore being addressed: "agents", "runs", "runEvents", or "checkpoints".
   string substore = 1;
   // Operation on the substore: "get", "create", "update", "delete", "list", or
   // "append" (runEvents only).
   string method = 2;
-  // Operation input object. Checkpoint blob bytes are base64-encoded strings.
+  // Operation input object. Checkpoint blob bytes are base64 strings.
   google.protobuf.Struct input = 3;
 }
 
 message CallStoreResponse {
-  // Operation output object, or unset for a null result (for example a get
-  // miss or a delete). Checkpoint blob bytes are base64-encoded strings.
+  // Operation output object, or unset for a null result (e.g. a `get` miss or
+  // a `delete`). Checkpoint blob bytes are base64 strings.
   google.protobuf.Struct output = 1;
 }

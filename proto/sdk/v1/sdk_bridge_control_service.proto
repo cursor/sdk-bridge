@@ -10,19 +10,13 @@ option ruby_package = "Cursor::Sdk::V1";
 option swift_prefix = "CursorSdkV1";
 
 // Bridge-local health, version, and lifecycle APIs.
-//
-// These RPCs manage the bridge process itself. They are not agent or run
-// operations; use SdkAgentService and SdkCursorService for those.
 service SdkBridgeControlService {
-  // Liveness check. Returns a fixed message when the bridge is accepting RPCs.
   rpc Ping(PingRequest) returns (PingResponse);
-  // Request a graceful shutdown of the bridge process.
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
-  // Bridge build version, protocol version, and advertised capabilities.
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
   // Point the bridge at a host-process custom-tool callback server after
-  // startup. Lets clients that attach to an already-running bridge register
-  // host execute handlers. Same-host (loopback) only.
+  // startup. Lets SDK clients that attach to an already-running bridge
+  // (Client.connect) register host execute handlers. Same-host (loopback) only.
   rpc SetToolCallback(SetToolCallbackRequest) returns (SetToolCallbackResponse);
 }
 
@@ -33,8 +27,6 @@ message PingResponse {
 }
 
 message ShutdownRequest {
-  // Seconds to wait for in-flight RPCs before forcing exit. Zero means
-  // immediate shutdown.
   uint32 grace_seconds = 1;
 }
 
@@ -43,11 +35,8 @@ message ShutdownResponse {}
 message GetVersionRequest {}
 
 message GetVersionResponse {
-  // Semver (or equivalent) of the bridge binary.
   string bridge_version = 1;
-  // Version of this sdk.v1 protocol contract the bridge implements.
   string protocol_version = 2;
-  // Feature strings the bridge supports (for client capability negotiation).
   repeated string capabilities = 3;
 }
 
