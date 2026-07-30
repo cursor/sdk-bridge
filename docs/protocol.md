@@ -25,28 +25,23 @@ Two authentication domains are involved, and they are independent:
 
 ## Obtaining the bridge
 
-Prebuilt standalone archives are published for every SDK release:
+Prebuilt standalone archives are attached to every
+[release of this repository](https://github.com/cursor/sdk-bridge/releases).
+Download `cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` for your platform
+from the [latest release](https://github.com/cursor/sdk-bridge/releases/latest):
 
-```text
-https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz
-```
-
-- `<version>` — the released SDK version (matches this repo's `vX.Y.Z` tags)
 - `<os>` — `linux` | `darwin` | `win32`
 - `<arch>` — `x64` | `arm64` (win32 is `x64` only)
 
-The archive unpacks to a single `cursor-sdk-bridge/` directory:
+Release tags `vX.Y.Z` match the released SDK version, and each release also
+attaches a `SHA256SUMS.txt` covering its archives.
+
+The archive unpacks in place (no top-level directory):
 
 ```text
-cursor-sdk-bridge/
-├── bin/
-│   ├── cursor-sdk-bridge      # POSIX launcher (cursor-sdk-bridge.cmd on Windows)
-│   └── node                   # bundled Node.js runtime (node.exe on Windows)
-├── dist/                      # the bridge server implementation
-├── node_modules/              # the npm-published @cursor/sdk and dependencies
-├── proto/sdk/v1/              # the exact proto contract this bridge implements
-├── manifest.json
-└── package.json
+bin/cursor-sdk-bridge      # self-contained executable (cursor-sdk-bridge.exe on Windows)
+proto/sdk/v1/              # the exact proto contract this bridge implements
+manifest.json
 ```
 
 `manifest.json` describes the archive:
@@ -58,12 +53,14 @@ cursor-sdk-bridge/
   "os": "linux",
   "arch": "x64",
   "entrypoint": "bin/cursor-sdk-bridge",
-  "protocol": "sdk.v1"
+  "protocol": "sdk.v1",
+  "distribution": "standalone",
+  "runtime": "bun-1.3.9"
 }
 ```
 
 Adapters should launch `entrypoint` and may assert `protocol == "sdk.v1"`
-before doing so. The same bridge is embedded per-platform in the `cursor-sdk`
+before doing so. The bridge is also embedded per-platform in the `cursor-sdk`
 Python wheels on PyPI, so a machine with the Python SDK installed already has
 a copy.
 

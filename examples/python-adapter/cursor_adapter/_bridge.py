@@ -40,17 +40,18 @@ def _default_binary() -> str:
     binary = os.environ.get("CURSOR_SDK_BRIDGE_BIN")
     if binary:
         return binary
-    launcher = "cursor-sdk-bridge.cmd" if sys.platform == "win32" else "cursor-sdk-bridge"
-    return os.path.join(".", "cursor-sdk-bridge", "bin", launcher)
+    executable = "cursor-sdk-bridge.exe" if sys.platform == "win32" else "cursor-sdk-bridge"
+    return os.path.join(".", "cursor-sdk-bridge", "bin", executable)
 
 
 class BridgeManager:
     """Owns one ``cursor-sdk-bridge`` child process.
 
     A published SDK would also download and cache the platform archive here
-    (``https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/...``);
-    this example expects the binary to exist already (``fetch-bridge.sh``) or
-    to be named via ``CURSOR_SDK_BRIDGE_BIN`` / the ``binary`` argument.
+    (``cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz`` from this repo's
+    GitHub releases); this example expects the binary to exist already
+    (``fetch-bridge.sh``) or to be named via ``CURSOR_SDK_BRIDGE_BIN`` / the
+    ``binary`` argument.
     """
 
     def __init__(

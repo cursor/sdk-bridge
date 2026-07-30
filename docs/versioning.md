@@ -18,9 +18,12 @@ repository. On every SDK release it:
    }
    ```
 
-3. commits directly to `main`; and
+3. commits directly to `main`;
 4. pushes an annotated tag `vX.Y.Z` matching the released `@cursor/sdk` npm /
-   `cursor-sdk` PyPI version.
+   `cursor-sdk` PyPI version; and
+5. publishes a GitHub release at that tag with the standalone bridge archives
+   (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz`) and a `SHA256SUMS.txt`
+   attached.
 
 Consequences:
 
@@ -41,8 +44,9 @@ mutually consistent:
 
 - the protos at the tag in this repo;
 - `@cursor/sdk@X.Y.Z` on npm and `cursor-sdk==X.Y.Z` on PyPI;
-- the prebuilt bridge archives at
-  `https://downloads.cursor.com/sdk-bridge/X.Y.Z/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`.
+- the standalone bridge archives attached to the
+  [GitHub release](https://github.com/cursor/sdk-bridge/releases) for tag
+  `vX.Y.Z` (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz`).
 
 Pin your adapter's codegen to a tag, and prefer running a bridge whose
 `manifest.json` `sdkVersion` matches it. That said, exact matching is not
@@ -78,7 +82,8 @@ when you need to gate on bridge features at runtime.
 
 ## Repository conventions
 
-- No release automation may be added to this repo that pushes to `main` or
-  creates `v*` tags — those are reserved for the sync. CI is checks-only.
+- No release automation may be added to this repo that pushes to `main`,
+  creates `v*` tags, or publishes releases — those are reserved for the sync.
+  CI is checks-only.
 - The root `buf.yaml` is human-owned; it configures lint/breaking rules for
   the synced module and must keep working against whatever the sync writes.
