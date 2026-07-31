@@ -2,9 +2,9 @@
 
 A miniature Cursor SDK for Python, built on the `sdk.v1` bridge protocol —
 the architecture that the
-[`build-bridge-adapter` skill](../../.agents/skills/build-bridge-adapter/SKILL.md)
-describes, in a form another developer could `import` and use without knowing
-the bridge exists:
+["Agent: start here" guide](../../README.md#agent-start-here) in the
+repository README describes, in a form another developer could `import` and
+use without knowing the bridge exists:
 
 ```python
 from cursor_adapter import Client
@@ -27,7 +27,7 @@ print(prompt("Summarize this repository.", cwd="/repo"))
 
 ## Package layout
 
-Each module is one component from the skill's architecture table:
+Each module is one component from the guide's architecture table:
 
 | Module | Component |
 | --- | --- |
@@ -47,7 +47,7 @@ just as well. Either way, classic gRPC clients will not work — the bridge is
 HTTP/1.1 only (see [`docs/protocol.md`](../../docs/protocol.md)).
 
 Not covered here: the adapter-served callback services (custom tools and
-custom stores, milestone 6 in the skill), which require running a loopback
+custom stores, milestone 6 in the guide), which require running a loopback
 Connect *server* — see [`docs/services.md`](../../docs/services.md).
 
 ## Prerequisites

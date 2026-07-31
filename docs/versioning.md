@@ -28,8 +28,8 @@ Consequences:
   the next sync. CI lints `proto/` (see
   [`.github/workflows/proto-check.yml`](../.github/workflows/proto-check.yml))
   but everything under it is machine-written.
-- Everything **outside** `proto/` — docs, examples, skills, CI — is
-  human-owned and never modified by the sync.
+- Everything **outside** `proto/` — docs, examples, CI — is human-owned and
+  never modified by the sync.
 - The sync tolerates an empty repository, so `proto/` may be briefly absent
   (before the first release sync). CI and tooling skip gracefully in that
   state.
