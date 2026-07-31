@@ -1,7 +1,7 @@
 """cursor_adapter — an example Python SDK for the Cursor SDK bridge.
 
-A miniature of the architecture in the ``build-bridge-adapter`` skill
-(``.agents/skills/build-bridge-adapter/SKILL.md``): a bridge manager, a
+A miniature of the architecture in the "Agent: start here" guide in the
+repository README: a bridge manager, a
 hand-rolled Connect-over-HTTP/1.1 transport, ``Client`` / ``Agent`` /
 ``Run`` handles, the ``Cursor`` catalog, and a class-based error taxonomy.
 The bridge process never appears in the happy path::
