@@ -8,12 +8,6 @@ overwritten by the next release, so **pull requests must not touch
 `proto/`**. `proto/manifest.json` records which release a checkout carries
 (`protocol`, `sdkVersion`, and the source commit it was generated from).
 
-Everything **outside** `proto/` — docs, examples, CI — is human-owned and
-never modified by a release.
-
-`proto/` may be briefly absent (before the first release is published). CI
-and tooling skip gracefully in that state.
-
 ## Tags and picking a version
 
 Tags `vX.Y.Z` track SDK releases one-to-one. For a given version you get, all

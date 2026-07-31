@@ -50,8 +50,7 @@ integration, or a one-off script.
 > **Note:** `proto/` is owned by Cursor's release automation and rewritten on
 > every release, and every release pushes an annotated tag `vX.Y.Z` matching
 > the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull requests
-> must never touch `proto/`. If the directory is missing, the first release
-> has not been published yet.
+> must never touch `proto/`.
 
 ## The contract at a glance
 
