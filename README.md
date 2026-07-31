@@ -42,16 +42,16 @@ integration, or a one-off script.
 
 | Path | Contents |
 | --- | --- |
-| `proto/sdk/v1/` | The `sdk.v1` protobuf contract. **Generated — do not edit.** Synced automatically from Cursor's internal repository on every SDK release. |
-| `proto/manifest.json` | Sync metadata: `protocol` (`"sdk.v1"`), `sdkVersion`, `sourceRepo`, `sourceCommit`. |
+| `proto/sdk/v1/` | The `sdk.v1` protobuf contract. **Generated — do not edit.** Regenerated automatically on every SDK release. |
+| `proto/manifest.json` | Release metadata: `protocol` (`"sdk.v1"`), `sdkVersion`, and the source commit. |
 | `docs/` | The protocol guide: lifecycle, services, streaming, errors, versioning. |
 | `examples/` | Minimal adapters in other languages, each with its own `buf.gen.yaml`. |
 
-> **Note:** `proto/` is owned by Cursor's release automation. It is deleted and
-> rewritten on every sync, and every release pushes an annotated tag `vX.Y.Z`
-> matching the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull
-> requests must never touch `proto/`. If the directory is missing, the first
-> sync has not run yet.
+> **Note:** `proto/` is owned by Cursor's release automation and rewritten on
+> every release, and every release pushes an annotated tag `vX.Y.Z` matching
+> the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull requests
+> must never touch `proto/`. If the directory is missing, the first release
+> has not been published yet.
 
 ## The contract at a glance
 
@@ -121,7 +121,7 @@ built on this protocol.
 - [`docs/services.md`](docs/services.md) — the role of each service, including the adapter-implemented callback services
 - [`docs/streaming.md`](docs/streaming.md) — run stream semantics: envelopes, offsets, resume, keepalives
 - [`docs/errors.md`](docs/errors.md) — the structured error model from `sdk_errors.proto`
-- [`docs/versioning.md`](docs/versioning.md) — sync automation, tag policy, and the `sdk.v1` compatibility promise
+- [`docs/versioning.md`](docs/versioning.md) — tag policy and the `sdk.v1` compatibility promise
 
 ---
 
@@ -200,7 +200,7 @@ Copy `examples/python-adapter/buf.gen.yaml` as a template: point `inputs` at
 your copy of the protos (`directory: ../../proto` when working inside this
 repository) and swap the plugins for the target language's protobuf + Connect
 plugins. For compiled languages, use buf's `managed` mode to override
-language package options — the synced protos carry Cursor-internal values for
+language package options — the published protos carry Cursor-internal values for
 `go_package`, `java_package`, and friends. Only `sdk/v1/*.proto` and Google
 well-known types are involved; no other dependencies. Commit the
 `buf.gen.yaml`, gitignore the `gen/` output.

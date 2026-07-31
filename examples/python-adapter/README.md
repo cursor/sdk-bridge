@@ -59,8 +59,8 @@ Connect *server* — see [`docs/services.md`](../../docs/services.md).
 
 ## 1. Generate the messages
 
-From this directory (requires `proto/` at the repo root — present after the
-first release sync; at a tag it matches that release exactly):
+From this directory (requires `proto/` at the repo root — present once the
+first release is published; at a tag it matches that release exactly):
 
 ```bash
 buf generate

@@ -1,38 +1,18 @@
-# Versioning, sync automation, and compatibility
+# Versioning and compatibility
 
 ## `proto/` is generated — never edit it
 
-Cursor's internal SDK release pipeline owns the `proto/` directory of this
-repository. On every SDK release it:
+The `proto/` directory is machine-written: Cursor's release automation
+regenerates it on every SDK release and tags the result. Any hand edit is
+overwritten by the next release, so **pull requests must not touch
+`proto/`**. `proto/manifest.json` records which release a checkout carries
+(`protocol`, `sdkVersion`, and the source commit it was generated from).
 
-1. deletes `proto/` and rewrites `proto/sdk/v1/*.proto` from the internal
-   source of truth;
-2. writes `proto/manifest.json` describing the sync:
+Everything **outside** `proto/` — docs, examples, CI — is human-owned and
+never modified by a release.
 
-   ```json
-   {
-     "protocol": "sdk.v1",
-     "sdkVersion": "<released version>",
-     "sourceRepo": "anysphere/everysphere",
-     "sourceCommit": "<source commit>"
-   }
-   ```
-
-3. commits directly to `main`; and
-4. pushes an annotated tag `vX.Y.Z` matching the released `@cursor/sdk` npm /
-   `cursor-sdk` PyPI version.
-
-Consequences:
-
-- **Pull requests must not touch `proto/`.** Any hand edit is overwritten by
-  the next sync. CI lints `proto/` (see
-  [`.github/workflows/proto-check.yml`](../.github/workflows/proto-check.yml))
-  but everything under it is machine-written.
-- Everything **outside** `proto/` — docs, examples, CI — is human-owned and
-  never modified by the sync.
-- The sync tolerates an empty repository, so `proto/` may be briefly absent
-  (before the first release sync). CI and tooling skip gracefully in that
-  state.
+`proto/` may be briefly absent (before the first release is published). CI
+and tooling skip gracefully in that state.
 
 ## Tags and picking a version
 
@@ -57,10 +37,10 @@ required — see the compatibility promise below.
 - new RPCs, messages, fields, enum values, stream envelope cases, and
   capability strings may be added at any time.
 
-CI enforces this with `buf breaking` semantics (`WIRE_JSON`) on the lint
-config at the repository root, and the same checks run upstream before a sync
-is cut. An incompatible change would ship as a new `sdk.v2` package alongside
-`sdk.v1`, not as an edit to it.
+Compatibility is checked with `buf breaking` semantics (`WIRE_JSON`,
+configured in the root `buf.yaml`) before every release. An incompatible
+change would ship as a new `sdk.v2` package alongside `sdk.v1`, not as an
+edit to it.
 
 What this demands of adapters (the standard proto3 rules):
 
@@ -75,10 +55,3 @@ An adapter generated from an older tag keeps working against a newer bridge,
 and vice versa; new functionality simply is not visible until you regenerate.
 Use `SdkBridgeControlService.GetVersion` (`protocol_version`, `capabilities`)
 when you need to gate on bridge features at runtime.
-
-## Repository conventions
-
-- No release automation may be added to this repo that pushes to `main` or
-  creates `v*` tags — those are reserved for the sync. CI is checks-only.
-- The root `buf.yaml` is human-owned; it configures lint/breaking rules for
-  the synced module and must keep working against whatever the sync writes.
