@@ -48,19 +48,20 @@ integration, or a one-off script.
 | `examples/` | Minimal adapters in other languages, each with its own `buf.gen.yaml`. |
 
 > **Note:** `proto/` is owned by Cursor's release automation and rewritten on
-> every release, and every release pushes an annotated tag `vX.Y.Z` matching
-> the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull requests
+> every release. Every release pushes an annotated tag `vX.Y.Z` matching the
+> released `@cursor/sdk` npm / `cursor-sdk` PyPI version and publishes a
+> GitHub release with the standalone bridge archives attached. Pull requests
 > must never touch `proto/`.
 
 ## Getting the bridge
 
-Prebuilt standalone archives are published for every release at
-`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`
-(`<version>` matches this repo's `vX.Y.Z` tags; os `linux|darwin|win32`, arch
-`x64|arm64`, win32 is `x64` only). The same bridge is embedded in the
-`cursor-sdk` Python wheels on PyPI. See
-[`docs/protocol.md`](docs/protocol.md) for the archive layout and the
-spawn-and-handshake lifecycle.
+Download `cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` for your platform
+(os `linux|darwin|win32`, arch `x64|arm64`, win32 is `x64` only) from this
+repository's [latest release](https://github.com/cursor/sdk-bridge/releases/latest)
+— every release attaches the standalone bridge archives and a
+`SHA256SUMS.txt`. The same bridge is embedded in the `cursor-sdk` Python
+wheels on PyPI. See [`docs/protocol.md`](docs/protocol.md) for the archive
+layout and the spawn-and-handshake lifecycle.
 
 ## Documentation
 
@@ -177,11 +178,13 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
 ### Milestone 2 — Bridge manager
 
 - Locate the bridge: an env override such as `CURSOR_SDK_BRIDGE_BIN` first,
-  then your package's bundled/downloaded archive
-  (`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`,
-  os: `linux|darwin|win32`, arch: `x64|arm64`; launcher at
-  `cursor-sdk-bridge/bin/cursor-sdk-bridge`, `.cmd` on Windows). Use the
-  `<version>` matching the tag you pinned.
+  then your package's bundled/downloaded archive. Standalone archives are
+  attached to this repo's GitHub releases
+  (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` on
+  <https://github.com/cursor/sdk-bridge/releases/latest>, os:
+  `linux|darwin|win32`, arch: `x64|arm64`) — download from the release for
+  the `vX.Y.Z` tag you pinned. Each unpacks flat: the executable is
+  `bin/cursor-sdk-bridge`, `.exe` on Windows.
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
 - Handshake: capture **stderr**, scan for the literal prefix
