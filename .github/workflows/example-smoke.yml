@@ -1,0 +1,80 @@
+# Runs the reference Python adapter against a released standalone bridge
+# archive, so a release that breaks the documented adapter workflow (codegen →
+# spawn → handshake → CreateAgent with local.cwd → management → shutdown) is
+# caught by CI instead of by the next adapter author.
+#
+# - On `release: published`, the checkout is the release tag, so the protos,
+#   the example, and the downloaded archive all match that release.
+# - On pushes / PRs / the weekly schedule, the example runs against the
+#   *latest* release: a red run means the current repo contents (docs +
+#   example) and the newest released bridge disagree.
+# - A real agent turn (demo.py) additionally runs when a CURSOR_API_KEY
+#   repository secret is configured; the offline smoke never needs one.
+name: example-smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  schedule:
+    - cron: "17 6 * * 1" # weekly safety net: releases created by automation tokens may not fire `release` events
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-adapter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/python-adapter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Generate sdk.v1 modules
+        run: buf generate
+
+      - name: Install runtime dependency
+        run: pip install -r requirements.txt
+
+      - name: Fetch the standalone bridge archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            ./fetch-bridge.sh "${GITHUB_REF_NAME#v}"
+          else
+            ./fetch-bridge.sh
+          fi
+
+      - name: Offline protocol smoke (no API key)
+        run: python smoke.py
+
+      - name: Check for CURSOR_API_KEY secret
+        id: key
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          if [ -n "$CURSOR_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "CURSOR_API_KEY secret not configured; skipped the real agent turn (demo.py)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Real agent turn (demo.py)
+        if: steps.key.outputs.present == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: python demo.py --workspace . --prompt "Reply with the single word OK."
