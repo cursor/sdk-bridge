@@ -157,7 +157,6 @@ official adapters set `go` / `python`).
 | `--tool-callback-auth-token <token>` | `CURSOR_SDK_TOOL_CALLBACK_AUTH_TOKEN` | Bearer token the bridge presents on tool callbacks. |
 | `--max-concurrent-agents <count>` | — | Advertised agent concurrency limit. |
 | `--max-message-bytes <bytes>` | — | Advertised max message size. |
-| `--verbose` | `CURSOR_SDK_BRIDGE_LOG` | Log every RPC to stderr: name, outcome, duration, and the full error including the underlying cause's stack. Payloads are never logged. |
 | `--help`, `-h` | — | Print usage. |
 
 Callback URL/token pairs must be provided together; supplying only one is a
@@ -202,16 +201,10 @@ adapter                                bridge
 
 ## Debugging
 
-Two tools cut adapter debugging from hours to minutes; reach for them before
-bisecting your own code:
-
-- **The curl smoke test** ([`smoke-test.md`](smoke-test.md)) — the full
-  spawn → `Ping` → `Me` → `CreateAgent` → `Send` sequence in JSON mode with
-  no adapter code involved. It answers "is it me or the bridge?" in one run.
-- **`--verbose` / `CURSOR_SDK_BRIDGE_LOG=1`** — the bridge traces every RPC
-  and full error to stderr. Give your adapter's bridge manager a way to pass
-  this through (a debug flag or by forwarding the env var); you will want it
-  on the first day.
+Before bisecting your own code, run the curl smoke test
+([`smoke-test.md`](smoke-test.md)) — the full spawn → `Ping` → `Me` →
+`CreateAgent` → `Send` sequence in JSON mode with no adapter code involved.
+It answers "is it me or the bridge?" in one run.
 
 Next: [`services.md`](services.md) for what each service does,
 [`streaming.md`](streaming.md) for run streams,

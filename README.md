@@ -191,9 +191,6 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
   `bin/cursor-sdk-bridge`, `.exe` on Windows.
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
-- Give users a way to turn on bridge RPC tracing (pass `--verbose` or forward
-  `CURSOR_SDK_BRIDGE_LOG`) — it is the fastest way to see what the bridge
-  actually received and why it failed.
 - Handshake: capture **stderr**, scan for the literal prefix
   `cursor-sdk-bridge ready ` (trailing space), parse the JSON after it,
   validate `schemaVersion == 1`, `transport == "tcp"`,

@@ -25,8 +25,7 @@ TOKEN=$(cat "$(grep -o '"authTokenFile":"[^"]*"' /tmp/bridge-stderr.log | cut -d
 
 (A fixed `--port` keeps the one-liners copy-pasteable; production adapters
 should use the default ephemeral port and parse the ready line properly —
-see [`protocol.md`](protocol.md). Add `--verbose` to make the bridge log
-every RPC and full error to stderr.)
+see [`protocol.md`](protocol.md).)
 
 ## 2. Ping and GetVersion — is the bridge alive and speaking sdk.v1?
 
@@ -109,9 +108,8 @@ curl -s -X POST "$B/sdk.v1.SdkBridgeControlService/Shutdown" \
 - Every error body is a Connect JSON error: `{"code":..., "message":...,
   "details":[...]}` with the `sdk.v1.SdkErrorDetails` detail base64-encoded in
   `details[].value` (see [`errors.md`](errors.md)).
-- A bare `{"code":"internal","message":"internal error"}` with no details is
-  the signature of an older bridge masking an unexpected internal
-  failure. Current bridges return the real message plus `SdkErrorDetails`, and
-  `--verbose` / `CURSOR_SDK_BRIDGE_LOG=1` traces every RPC on stderr. If you
-  are stuck on an older bridge, the masked exception is unrecoverable from
-  the outside — upgrade first, then re-run this smoke test.
+- A bare `{"code":"internal","message":"internal error"}` with no details
+  means the bridge masked an unexpected internal failure; the underlying
+  message is not recoverable from the outside. Re-running the failing step
+  from this smoke test at least tells you whether your adapter's request is
+  what triggers it.
