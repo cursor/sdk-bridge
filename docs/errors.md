@@ -67,6 +67,21 @@ Guidelines:
 
 (Enum values carry the `SDK_ERROR_CODE_` prefix in the proto.)
 
+## Bare `internal error` responses (older bridges)
+
+Bridges released up to and including 1.0.26 mask any unexpected internal
+failure as a bare `{"code":"internal","message":"internal error"}` — no
+`SdkErrorDetails`, no stderr output. Nothing an adapter does can recover the
+underlying message from the outside.
+
+Newer bridges attach the real failure message plus an `SdkErrorDetails`
+(`sdk_error_code: INTERNAL_ERROR`) to every unexpected error, and support
+`--verbose` / `CURSOR_SDK_BRIDGE_LOG=1` to trace each RPC and full error
+(including the underlying stack) on stderr. If you hit a bare
+`internal error` during development: upgrade the bridge, turn on `--verbose`,
+and re-run the [curl smoke test](smoke-test.md) to separate your adapter
+from the bridge.
+
 ## Errors outside the detail
 
 Two classes of failure never carry `SdkErrorDetails`:

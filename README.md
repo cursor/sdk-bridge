@@ -69,6 +69,7 @@ layout and the spawn-and-handshake lifecycle.
 - [`docs/services.md`](docs/services.md) — the role of each service, including the adapter-implemented callback services
 - [`docs/streaming.md`](docs/streaming.md) — run stream semantics: envelopes, offsets, resume, keepalives
 - [`docs/errors.md`](docs/errors.md) — the structured error model from `sdk_errors.proto`
+- [`docs/smoke-test.md`](docs/smoke-test.md) — a curl-only smoke test of every core RPC: the "is it me or the bridge?" oracle
 - [`docs/versioning.md`](docs/versioning.md) — tag policy and the `sdk.v1` compatibility promise
 
 ---
@@ -152,7 +153,10 @@ close) and a context-manager/`defer`/RAII form so the bridge can never leak.
   (`content-type: application/proto`) or JSON (`application/json`) body.
   **Classic gRPC will not work**: the bridge serves HTTP/1.1 only.
 - Running a real turn needs a `CURSOR_API_KEY`
-  ([cursor.com/dashboard](https://cursor.com/dashboard)).
+  ([cursor.com/dashboard](https://cursor.com/dashboard)) — set it in the
+  bridge's environment *and* pass it explicitly as `options.api_key` /
+  per-call `api_key` (see Milestone 4 and
+  [`docs/protocol.md`](docs/protocol.md)).
 
 Work through the milestones below **in order**, and keep a runnable
 demo/test at every milestone — each one builds on a verified previous layer.
@@ -187,6 +191,9 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
   `bin/cursor-sdk-bridge`, `.exe` on Windows.
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
+- Give users a way to turn on bridge RPC tracing (pass `--verbose` or forward
+  `CURSOR_SDK_BRIDGE_LOG`; releases after 1.0.26) — it is the fastest way to
+  see what the bridge actually received and why it failed.
 - Handshake: capture **stderr**, scan for the literal prefix
   `cursor-sdk-bridge ready ` (trailing space), parse the JSON after it,
   validate `schemaVersion == 1`, `transport == "tcp"`,
@@ -208,6 +215,10 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
   Missing/wrong token ⇒ `UNAUTHENTICATED`.
 - Verify with `SdkBridgeControlService.Ping`, then `GetVersion` (expect
   `protocol_version == "sdk.v1"`; capabilities gate optional features).
+- When an RPC fails and you suspect your own encoding or transport, run the
+  same RPC via the curl-only sequence in
+  [`docs/smoke-test.md`](docs/smoke-test.md) before bisecting your code — it
+  isolates adapter bugs from bridge/key/environment problems in one pass.
 - Build the error layer now, not last: decode `sdk.v1.SdkErrorDetails` from
   failed RPCs ([`docs/errors.md`](docs/errors.md) has the taxonomy and wire
   encoding) and map `sdk_error_code` + Connect code onto your language's
@@ -217,10 +228,14 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
 
 ### Milestone 4 — First turn: `Agent.send` → `Run`
 
-1. `SdkAgentService.CreateAgent` with `options.local.cwd = ["<workspace>"]`
-   and an explicit `options.model` — local agents require one; discover IDs
+1. `SdkAgentService.CreateAgent` with `options.local.cwd = ["<workspace>"]`,
+   an explicit `options.model` — local agents require one; discover IDs
    via `SdkCursorService.ListModels` (catalog calls **require** a per-call
-   `api_key`; there is no env fallback).
+   `api_key`; there is no env fallback) — and an explicit `options.api_key`.
+   **Always set `options.api_key`**: the bridge's `CURSOR_API_KEY` env var is
+   not a substitute — on released bridges up to and including 1.0.26 the env
+   var covers agent creation but not run execution, so step 2 fails with
+   `Invalid User API Key` without it.
 2. `SdkAgentService.Send` with the `agent_id` and a `UserMessage{text}`;
    wrap the server stream in your `Run` handle per
    [`docs/streaming.md`](docs/streaming.md):

@@ -17,11 +17,17 @@ Two authentication domains are involved, and they are independent:
 1. **Bridge auth** — a per-process bearer token, generated fresh on every
    launch, that protects the local RPC endpoint. Your adapter learns it during
    the handshake and must send it on every RPC.
-2. **Cursor auth** — the `CURSOR_API_KEY` environment variable, which the
-   bridge process uses to reach Cursor's API. Agent operations default to it;
-   some request messages accept a per-call `api_key` override, and
-   `SdkCursorService` catalog calls require one (see
-   [`services.md`](services.md)).
+2. **Cursor auth** — the API key the bridge uses to reach Cursor's API.
+   **Always set it explicitly on the request messages that accept one**:
+   `AgentOptions.api_key` on `CreateAgent`/`ResumeAgent`, and
+   `CursorRequestOptions.api_key` on every `SdkCursorService` catalog call
+   (catalog calls hard-require it — see [`services.md`](services.md)). Also
+   put `CURSOR_API_KEY` in the bridge's environment (some SDK paths read it),
+   but do not rely on the env var alone: released bridges up to and including
+   1.0.26 apply it to agent creation but **not** to run execution, so a run
+   on an agent created without an explicit `api_key` fails with
+   `Invalid User API Key`. Newer bridges resolve the env var for agent
+   operations too; setting the option is correct on every version.
 
 ## Obtaining the bridge
 
@@ -152,6 +158,7 @@ official adapters set `go` / `python`).
 | `--tool-callback-auth-token <token>` | `CURSOR_SDK_TOOL_CALLBACK_AUTH_TOKEN` | Bearer token the bridge presents on tool callbacks. |
 | `--max-concurrent-agents <count>` | — | Advertised agent concurrency limit. |
 | `--max-message-bytes <bytes>` | — | Advertised max message size. |
+| `--verbose` | `CURSOR_SDK_BRIDGE_LOG` | Log every RPC to stderr: name, outcome, duration, and the full error including the underlying cause's stack. Payloads are never logged. Releases after 1.0.26. |
 | `--help`, `-h` | — | Print usage. |
 
 Callback URL/token pairs must be provided together; supplying only one is a
@@ -194,6 +201,20 @@ adapter                                bridge
   │                          process exits
 ```
 
+## Debugging
+
+Two tools cut adapter debugging from hours to minutes; reach for them before
+bisecting your own code:
+
+- **The curl smoke test** ([`smoke-test.md`](smoke-test.md)) — the full
+  spawn → `Ping` → `Me` → `CreateAgent` → `Send` sequence in JSON mode with
+  no adapter code involved. It answers "is it me or the bridge?" in one run.
+- **`--verbose` / `CURSOR_SDK_BRIDGE_LOG=1`** (releases after 1.0.26) — the
+  bridge traces every RPC and full error to stderr. Give your adapter's
+  bridge manager a way to pass this through (a debug flag or by forwarding
+  the env var); you will want it on the first day.
+
 Next: [`services.md`](services.md) for what each service does,
-[`streaming.md`](streaming.md) for run streams, and
-[`errors.md`](errors.md) for the failure model.
+[`streaming.md`](streaming.md) for run streams,
+[`errors.md`](errors.md) for the failure model, and
+[`smoke-test.md`](smoke-test.md) for the no-adapter-code smoke test.

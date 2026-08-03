@@ -38,6 +38,7 @@ Each module is one component from the guide's architecture table:
 | `cursor_adapter/_run.py` | **`Run` handle** — event iteration (keepalives and unknown envelopes skipped), `iter_text()`, blocking `wait()` with `WaitLiveRun` fallback, `text()`, `cancel()`, `observe()` resume. |
 | `cursor_adapter/_errors.py` | **Errors** — one base class plus a taxonomy mapped from `SdkErrorDetails.sdk_error_code` and Connect codes, preserving `request_id`, `retry_after`, `rate_limit`. |
 | `demo.py` | One agent turn through the public surface only. |
+| `smoke.py` | Offline protocol smoke (no API key): spawn/handshake, `Ping`/`GetVersion`, `CreateAgent` with `local.cwd`, management, shutdown. Run by CI against each release's standalone archive. |
 
 The transport is hand-rolled deliberately: the wire protocol is simple enough
 (unary = one POST; streams = 5-byte-header frames ending in an
@@ -95,7 +96,20 @@ This downloads the standalone archive for your OS/arch
 it to `./cursor-sdk-bridge/`. Alternatively, point the SDK at any existing
 bridge executable with `CURSOR_SDK_BRIDGE_BIN` (or `Client(bridge_bin=...)`).
 
-## 4. Run one agent turn
+## 4. Smoke-test the protocol (no API key)
+
+```bash
+python smoke.py
+```
+
+This exercises everything that works offline — spawn, handshake, bearer
+auth, `Ping`/`GetVersion`, `CreateAgent` with an explicit `local.cwd`, agent
+management, and shutdown — and is the same script CI runs against each
+release's standalone archive. For failures during your own adapter work,
+the curl equivalents in [`docs/smoke-test.md`](../../docs/smoke-test.md)
+isolate adapter bugs from bridge problems.
+
+## 5. Run one agent turn
 
 ```bash
 export CURSOR_API_KEY=key_...
