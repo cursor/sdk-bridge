@@ -26,7 +26,7 @@ TOKEN=$(cat "$(grep -o '"authTokenFile":"[^"]*"' /tmp/bridge-stderr.log | cut -d
 (A fixed `--port` keeps the one-liners copy-pasteable; production adapters
 should use the default ephemeral port and parse the ready line properly —
 see [`protocol.md`](protocol.md). Add `--verbose` to make the bridge log
-every RPC and full error to stderr; supported by releases after 1.0.26.)
+every RPC and full error to stderr.)
 
 ## 2. Ping and GetVersion — is the bridge alive and speaking sdk.v1?
 
@@ -61,7 +61,7 @@ Omitting the key yields
 ## 4. CreateAgent — can the bridge create a local agent?
 
 Set the key on `options.apiKey` (see [`protocol.md`](protocol.md) on why the
-env var alone is not sufficient for runs on released bridges ≤ 1.0.26):
+env var alone is not sufficient):
 
 ```bash
 curl -s -X POST "$B/sdk.v1.SdkAgentService/CreateAgent" \
@@ -110,8 +110,8 @@ curl -s -X POST "$B/sdk.v1.SdkBridgeControlService/Shutdown" \
   "details":[...]}` with the `sdk.v1.SdkErrorDetails` detail base64-encoded in
   `details[].value` (see [`errors.md`](errors.md)).
 - A bare `{"code":"internal","message":"internal error"}` with no details is
-  the signature of an older bridge (≤ 1.0.26) masking an unexpected internal
-  failure. Newer bridges return the real message plus `SdkErrorDetails`, and
+  the signature of an older bridge masking an unexpected internal
+  failure. Current bridges return the real message plus `SdkErrorDetails`, and
   `--verbose` / `CURSOR_SDK_BRIDGE_LOG=1` traces every RPC on stderr. If you
   are stuck on an older bridge, the masked exception is unrecoverable from
   the outside — upgrade first, then re-run this smoke test.

@@ -57,11 +57,10 @@ to the bridge's environment.
 
 Agent operations also accept an explicit key (`AgentOptions.api_key`), and
 adapters should **always set it** rather than relying on the bridge's
-`CURSOR_API_KEY` env var: released bridges up to and including 1.0.26 apply
-the env var to agent creation but not to run execution, so runs on an agent
-created without an explicit `api_key` fail with `Invalid User API Key`.
-Newer bridges fall back to the env var consistently, but setting the option
-works on every version.
+`CURSOR_API_KEY` env var: not every operation falls back to the env var on
+every bridge build — on some, runs on an agent created without an explicit
+`api_key` fail with `Invalid User API Key`. Setting the option works
+everywhere.
 
 ### `SdkBridgeControlService` (`sdk_bridge_control_service.proto`)
 

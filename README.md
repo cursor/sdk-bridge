@@ -192,8 +192,8 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
 - Give users a way to turn on bridge RPC tracing (pass `--verbose` or forward
-  `CURSOR_SDK_BRIDGE_LOG`; releases after 1.0.26) — it is the fastest way to
-  see what the bridge actually received and why it failed.
+  `CURSOR_SDK_BRIDGE_LOG`) — it is the fastest way to see what the bridge
+  actually received and why it failed.
 - Handshake: capture **stderr**, scan for the literal prefix
   `cursor-sdk-bridge ready ` (trailing space), parse the JSON after it,
   validate `schemaVersion == 1`, `transport == "tcp"`,
@@ -233,9 +233,9 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
    via `SdkCursorService.ListModels` (catalog calls **require** a per-call
    `api_key`; there is no env fallback) — and an explicit `options.api_key`.
    **Always set `options.api_key`**: the bridge's `CURSOR_API_KEY` env var is
-   not a substitute — on released bridges up to and including 1.0.26 the env
-   var covers agent creation but not run execution, so step 2 fails with
-   `Invalid User API Key` without it.
+   not a substitute — not every operation falls back to it on every bridge
+   build, and without the option step 2 can fail with
+   `Invalid User API Key`.
 2. `SdkAgentService.Send` with the `agent_id` and a `UserMessage{text}`;
    wrap the server stream in your `Run` handle per
    [`docs/streaming.md`](docs/streaming.md):

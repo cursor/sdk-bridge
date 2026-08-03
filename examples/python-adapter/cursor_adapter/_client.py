@@ -190,10 +190,9 @@ class Agents:
             name=name or "",
             local=messages_pb2.LocalAgentOptions(cwd=[os.path.abspath(path) for path in cwds]),
             # Always set the key on AgentOptions. Do not rely on the bridge's
-            # CURSOR_API_KEY env var alone: released bridges up to and
-            # including 1.0.26 apply it to agent creation but not to run
-            # execution, so runs on an agent created without an explicit
-            # api_key fail with "Invalid User API Key".
+            # CURSOR_API_KEY env var alone: not every operation falls back to
+            # it on every bridge build, and runs on an agent created without
+            # an explicit api_key can fail with "Invalid User API Key".
             api_key=self._client.api_key,
         )
         response = self._client._rpc.unary(
