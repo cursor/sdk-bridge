@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package sdk.v1;
+
+option csharp_namespace = "Cursor.Sdk.V1";
+option go_package = "github.com/anysphere/everysphere/anygo/proto/sdk/v1";
+option java_multiple_files = true;
+option java_package = "com.cursor.sdk.v1";
+option ruby_package = "Cursor::Sdk::V1";
+option swift_prefix = "CursorSdkV1";
+
+// Bridge-local health, version, and lifecycle APIs.
+service SdkBridgeControlService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+  // Point the bridge at a host-process custom-tool callback server after
+  // startup. Lets SDK clients that attach to an already-running bridge
+  // (Client.connect) register host execute handlers. Same-host (loopback) only.
+  rpc SetToolCallback(SetToolCallbackRequest) returns (SetToolCallbackResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
+}
+
+message ShutdownRequest {
+  uint32 grace_seconds = 1;
+}
+
+message ShutdownResponse {}
+
+message GetVersionRequest {}
+
+message GetVersionResponse {
+  string bridge_version = 1;
+  string protocol_version = 2;
+  repeated string capabilities = 3;
+}
+
+message SetToolCallbackRequest {
+  // Connect base URL of the host custom-tool callback server. Empty clears the
+  // currently configured callback.
+  string url = 1;
+  // Bearer token the bridge presents on CallCustomTool RPCs.
+  string auth_token = 2;
+}
+
+message SetToolCallbackResponse {}

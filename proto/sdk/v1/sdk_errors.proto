@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package sdk.v1;
+
+import "google/protobuf/duration.proto";
+
+option csharp_namespace = "Cursor.Sdk.V1";
+option go_package = "github.com/anysphere/everysphere/anygo/proto/sdk/v1";
+option java_multiple_files = true;
+option java_package = "com.cursor.sdk.v1";
+option ruby_package = "Cursor::Sdk::V1";
+option swift_prefix = "CursorSdkV1";
+
+// Public SDK error codes returned by the bridge.
+enum SdkErrorCode {
+  SDK_ERROR_CODE_UNSPECIFIED = 0;
+  SDK_ERROR_CODE_UNAUTHORIZED = 1;
+  SDK_ERROR_CODE_API_KEY_NOT_FOUND = 2;
+  SDK_ERROR_CODE_PLAN_REQUIRED = 3;
+  SDK_ERROR_CODE_ROLE_FORBIDDEN = 4;
+  SDK_ERROR_CODE_FEATURE_UNAVAILABLE = 5;
+  SDK_ERROR_CODE_AGENT_NOT_FOUND = 6;
+  SDK_ERROR_CODE_RUN_NOT_FOUND = 7;
+  SDK_ERROR_CODE_VALIDATION_ERROR = 8;
+  SDK_ERROR_CODE_INVALID_MODEL = 9;
+  SDK_ERROR_CODE_INVALID_BRANCH_NAME = 10;
+  SDK_ERROR_CODE_REPOSITORY_REQUIRED = 11;
+  SDK_ERROR_CODE_REPOSITORY_ACCESS = 12;
+  SDK_ERROR_CODE_PR_RESOLUTION_FAILED = 13;
+  SDK_ERROR_CODE_USAGE_LIMIT_EXCEEDED = 14;
+  SDK_ERROR_CODE_AGENT_BUSY = 15;
+  SDK_ERROR_CODE_AGENT_ARCHIVED = 16;
+  SDK_ERROR_CODE_RUN_NOT_CANCELLABLE = 17;
+  SDK_ERROR_CODE_RATE_LIMIT_EXCEEDED = 18;
+  SDK_ERROR_CODE_UPSTREAM_ERROR = 19;
+  SDK_ERROR_CODE_INTERNAL_ERROR = 20;
+  SDK_ERROR_CODE_CLIENT_CANCELLED = 21;
+}
+
+// Rate-limit metadata surfaced from Cursor Cloud responses.
+message RateLimitInfo {
+  optional uint64 limit = 1;
+  optional uint64 remaining = 2;
+  optional uint64 reset_epoch_seconds = 3;
+}
+
+// Stable, public error details attached to Connect errors.
+message SdkErrorDetails {
+  // Full request ID from Cursor Cloud, if one is available. Never truncate this.
+  optional string request_id = 1;
+  SdkErrorCode sdk_error_code = 2;
+  string message = 3;
+  optional string help_url = 4;
+  optional string provider = 5;
+  optional google.protobuf.Duration retry_after = 6;
+  optional RateLimitInfo rate_limit = 7;
+}
