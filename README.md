@@ -48,71 +48,20 @@ integration, or a one-off script.
 | `examples/` | Minimal adapters in other languages, each with its own `buf.gen.yaml`. |
 
 > **Note:** `proto/` is owned by Cursor's release automation and rewritten on
-> every release, and every release pushes an annotated tag `vX.Y.Z` matching
-> the released `@cursor/sdk` npm / `cursor-sdk` PyPI version. Pull requests
+> every release. Every release pushes an annotated tag `vX.Y.Z` matching the
+> released `@cursor/sdk` npm / `cursor-sdk` PyPI version and publishes a
+> GitHub release with the standalone bridge archives attached. Pull requests
 > must never touch `proto/`.
-
-## The contract at a glance
-
-Seven files under `proto/sdk/v1/`, package `sdk.v1`, self-contained apart from
-Google well-known types:
-
-| File | Role |
-| --- | --- |
-| `sdk_agent_service.proto` | `SdkAgentService` — create/resume agents, send messages, stream runs, artifacts, usage. |
-| `sdk_cursor_service.proto` | `SdkCursorService` — client-level operations (identity, models, repositories). |
-| `sdk_bridge_control_service.proto` | `SdkBridgeControlService` — bridge lifecycle (ping, version, shutdown). |
-| `sdk_custom_tool_callback_service.proto` | `SdkCustomToolCallbackService` — implemented **by the adapter**; the bridge calls back into it to execute user-defined custom tools. |
-| `sdk_store_callback_service.proto` | `SdkStoreCallbackService` — implemented **by the adapter** for custom agent stores. |
-| `sdk_messages.proto` | Shared messages, enums, and the run-stream envelope. |
-| `sdk_errors.proto` | Structured error details and the stable error-code taxonomy. |
 
 ## Getting the bridge
 
-Prebuilt standalone archives are published for every release:
-
-```text
-https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz
-```
-
-- `<version>` — the released SDK version (matches this repo's `vX.Y.Z` tags)
-- `<os>` — `linux` | `darwin` | `win32`
-- `<arch>` — `x64` | `arm64` (win32 is `x64` only)
-
-Each archive unpacks to a `cursor-sdk-bridge/` directory containing:
-
-- `bin/cursor-sdk-bridge` (or `bin\cursor-sdk-bridge.cmd` on Windows) — the launcher
-- `manifest.json` — `bridgeVersion`, `sdkVersion`, `os`, `arch`, `entrypoint`, `protocol` (`"sdk.v1"`)
-- `proto/sdk/v1/` — the exact proto contract this bridge implements
-- a bundled Node.js runtime plus the npm-published `@cursor/sdk`
-
-The bridge is also embedded in the `cursor-sdk` Python wheels on PyPI (one
-wheel per platform), and `@cursor/sdk` on npm is the entry point for the
-TypeScript SDK itself.
-
-## Quickstart: spawn and handshake
-
-1. Spawn `bin/cursor-sdk-bridge` with `CURSOR_API_KEY` set in its environment
-   (create a key at [cursor.com/dashboard](https://cursor.com/dashboard)).
-2. Read the bridge's **stderr** until a line starting with the literal prefix
-   `cursor-sdk-bridge ready ` appears. The rest of the line is JSON:
-
-   ```json
-   {"schemaVersion":1,"transport":"tcp","protocol":"connect",
-    "host":"127.0.0.1","port":49152,"url":"http://127.0.0.1:49152",
-    "authTokenFile":"/tmp/cursor-sdk-bridge-abc/auth-token", "...":"..."}
-   ```
-
-3. Read the bearer token from `authTokenFile` (trim whitespace).
-4. Send `Authorization: Bearer <token>` on **every** RPC. Requests without it
-   are rejected with `UNAUTHENTICATED`.
-5. Call `SdkBridgeControlService.Ping` to confirm the connection, then use
-   `SdkAgentService` to create an agent and stream a run.
-
-See [`docs/protocol.md`](docs/protocol.md) for the full lifecycle and
-[`examples/python-adapter/`](examples/python-adapter/) for a complete working
-adapter — a miniature Python SDK with `Client` / `Agent` / `Run` handles
-built on this protocol.
+Download `cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` for your platform
+(os `linux|darwin|win32`, arch `x64|arm64`, win32 is `x64` only) from this
+repository's [latest release](https://github.com/cursor/sdk-bridge/releases/latest)
+— every release attaches the standalone bridge archives and a
+`SHA256SUMS.txt`. The same bridge is embedded in the `cursor-sdk` Python
+wheels on PyPI. See [`docs/protocol.md`](docs/protocol.md) for the archive
+layout and the spawn-and-handshake lifecycle.
 
 ## Documentation
 
@@ -140,6 +89,21 @@ miniature of the target shape — one module per architecture-table component,
 over a hand-rolled transport that keeps the wire format visible — and
 [`docs/streaming.md`](docs/streaming.md) / [`docs/errors.md`](docs/errors.md)
 cover streams and failures.
+
+### The contract at a glance
+
+Seven files under `proto/sdk/v1/`, package `sdk.v1`, self-contained apart from
+Google well-known types:
+
+| File | Role |
+| --- | --- |
+| `sdk_agent_service.proto` | `SdkAgentService` — create/resume agents, send messages, stream runs, artifacts, usage. |
+| `sdk_cursor_service.proto` | `SdkCursorService` — client-level operations (identity, models, repositories). |
+| `sdk_bridge_control_service.proto` | `SdkBridgeControlService` — bridge lifecycle (ping, version, shutdown). |
+| `sdk_custom_tool_callback_service.proto` | `SdkCustomToolCallbackService` — implemented **by the adapter**; the bridge calls back into it to execute user-defined custom tools. |
+| `sdk_store_callback_service.proto` | `SdkStoreCallbackService` — implemented **by the adapter** for custom agent stores. |
+| `sdk_messages.proto` | Shared messages, enums, and the run-stream envelope. |
+| `sdk_errors.proto` | Structured error details and the stable error-code taxonomy. |
 
 ### The target architecture
 
@@ -214,11 +178,13 @@ end-of-stream flag `0x02` carrying a JSON EndStreamResponse with any error).
 ### Milestone 2 — Bridge manager
 
 - Locate the bridge: an env override such as `CURSOR_SDK_BRIDGE_BIN` first,
-  then your package's bundled/downloaded archive
-  (`https://downloads.cursor.com/sdk-bridge/<version>/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`,
-  os: `linux|darwin|win32`, arch: `x64|arm64`; launcher at
-  `cursor-sdk-bridge/bin/cursor-sdk-bridge`, `.cmd` on Windows). Use the
-  `<version>` matching the tag you pinned.
+  then your package's bundled/downloaded archive. Standalone archives are
+  attached to this repo's GitHub releases
+  (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz` on
+  <https://github.com/cursor/sdk-bridge/releases/latest>, os:
+  `linux|darwin|win32`, arch: `x64|arm64`) — download from the release for
+  the `vX.Y.Z` tag you pinned. Each unpacks flat: the executable is
+  `bin/cursor-sdk-bridge`, `.exe` on Windows.
 - Spawn with `CURSOR_API_KEY` in the environment, `--workspace <dir>` for
   local agents, and `CURSOR_SDK_CLIENT_LANGUAGE=<language>` for attribution.
 - Handshake: capture **stderr**, scan for the literal prefix

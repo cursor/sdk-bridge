@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 # Download and unpack the standalone cursor-sdk-bridge archive for this
-# machine into ./cursor-sdk-bridge/.
+# machine into ./cursor-sdk-bridge/, from this repository's GitHub releases.
 set -euo pipefail
 
+# Optional: a version to pin (e.g. "1.0.26", matching this repo's vX.Y.Z
+# tags). Defaults to the latest release.
 VERSION="${1:-}"
-if [ -z "$VERSION" ]; then
-  echo "usage: $0 <version>   (e.g. $0 1.0.26; versions match this repo's vX.Y.Z tags)" >&2
-  exit 1
-fi
 
 case "$(uname -s)" in
   Linux) OS=linux ;;
@@ -28,12 +26,21 @@ case "$(uname -m)" in
     ;;
 esac
 
-URL="https://downloads.cursor.com/sdk-bridge/${VERSION}/${OS}/${ARCH}/cursor-sdk-bridge-package.tar.gz"
+ASSET="cursor-sdk-bridge-standalone-${OS}-${ARCH}.tar.gz"
+if [ -z "$VERSION" ]; then
+  URL="https://github.com/cursor/sdk-bridge/releases/latest/download/${ASSET}"
+else
+  URL="https://github.com/cursor/sdk-bridge/releases/download/v${VERSION#v}/${ASSET}"
+fi
+
 echo "Downloading ${URL}"
-curl -fSL -o cursor-sdk-bridge-package.tar.gz "$URL"
-tar -xzf cursor-sdk-bridge-package.tar.gz
-rm cursor-sdk-bridge-package.tar.gz
+curl -fSL -o "$ASSET" "$URL"
+# The archive has no top-level directory; unpack it into ./cursor-sdk-bridge/.
+rm -rf cursor-sdk-bridge
+mkdir cursor-sdk-bridge
+tar -xzf "$ASSET" -C cursor-sdk-bridge
+rm "$ASSET"
 
 echo "Bridge unpacked. Manifest:"
 cat cursor-sdk-bridge/manifest.json
-echo "Launcher: ./cursor-sdk-bridge/bin/cursor-sdk-bridge"
+echo "Executable: ./cursor-sdk-bridge/bin/cursor-sdk-bridge"

@@ -36,7 +36,7 @@ def main() -> None:
     parser.add_argument(
         "--bridge",
         default=None,
-        help="path to the bridge launcher (default: $CURSOR_SDK_BRIDGE_BIN, "
+        help="path to the bridge executable (default: $CURSOR_SDK_BRIDGE_BIN, "
         "then ./cursor-sdk-bridge/bin/cursor-sdk-bridge)",
     )
     parser.add_argument("--workspace", default=".", help="workspace directory for the local agent")

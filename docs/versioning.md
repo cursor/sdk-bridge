@@ -15,8 +15,9 @@ mutually consistent:
 
 - the protos at the tag in this repo;
 - `@cursor/sdk@X.Y.Z` on npm and `cursor-sdk==X.Y.Z` on PyPI;
-- the prebuilt bridge archives at
-  `https://downloads.cursor.com/sdk-bridge/X.Y.Z/<os>/<arch>/cursor-sdk-bridge-package.tar.gz`.
+- the standalone bridge archives attached to the
+  [GitHub release](https://github.com/cursor/sdk-bridge/releases) for tag
+  `vX.Y.Z` (`cursor-sdk-bridge-standalone-<os>-<arch>.tar.gz`).
 
 Pin your adapter's codegen to a tag, and prefer running a bridge whose
 `manifest.json` `sdkVersion` matches it. That said, exact matching is not
