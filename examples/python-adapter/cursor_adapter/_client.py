@@ -189,6 +189,12 @@ class Agents:
             model=messages_pb2.ModelSelection(id=model),
             name=name or "",
             local=messages_pb2.LocalAgentOptions(cwd=[os.path.abspath(path) for path in cwds]),
+            # Always set the key on AgentOptions. Do not rely on the bridge's
+            # CURSOR_API_KEY env var alone: released bridges up to and
+            # including 1.0.26 apply it to agent creation but not to run
+            # execution, so runs on an agent created without an explicit
+            # api_key fail with "Invalid User API Key".
+            api_key=self._client.api_key,
         )
         response = self._client._rpc.unary(
             "SdkAgentService",
@@ -200,7 +206,7 @@ class Agents:
 
     def resume(self, agent_id: str, *, model: str | None = None) -> Agent:
         """Re-attach to an existing agent, optionally switching model."""
-        options = messages_pb2.AgentOptions()
+        options = messages_pb2.AgentOptions(api_key=self._client.api_key)
         if model:
             options.model.id = model
         response = self._client._rpc.unary(

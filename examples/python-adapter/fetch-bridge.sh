@@ -34,7 +34,19 @@ else
 fi
 
 echo "Downloading ${URL}"
-curl -fSL -o "$ASSET" "$URL"
+if ! curl -fSL -o "$ASSET" "$URL"; then
+  # Anonymous release downloads 404 when the repository requires
+  # authentication (private repo / SAML SSO). Fall back to the GitHub CLI,
+  # which reuses your `gh auth login` credentials.
+  if command -v gh > /dev/null 2>&1; then
+    echo "curl download failed (repository may require auth/SSO); retrying with gh" >&2
+    gh release download ${VERSION:+"v${VERSION#v}"} \
+      --repo cursor/sdk-bridge --pattern "$ASSET" --output "$ASSET" --clobber
+  else
+    echo "download failed; if the repository requires auth/SSO, install the GitHub CLI (gh) and re-run" >&2
+    exit 1
+  fi
+fi
 # The archive has no top-level directory; unpack it into ./cursor-sdk-bridge/.
 rm -rf cursor-sdk-bridge
 mkdir cursor-sdk-bridge
