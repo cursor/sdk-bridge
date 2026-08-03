@@ -2,12 +2,12 @@
 """Offline protocol smoke test: exercise every RPC that works without a
 Cursor API key against a real bridge binary.
 
-This is the CI gate that runs the example adapter against each release's
-standalone archive (see .github/workflows/example-smoke.yml). It needs no
-network and no CURSOR_API_KEY, so it can't run a real turn — demo.py covers
-that when a key is available — but it does exercise the spawn/handshake,
-bearer auth, Ping/GetVersion, the Milestone-4 CreateAgent shape (explicit
-``local.cwd``), agent management, and Shutdown.
+It needs no network and no CURSOR_API_KEY, so it can't run a real turn —
+demo.py covers that when a key is available — but it does exercise the
+spawn/handshake, bearer auth, Ping/GetVersion, the Milestone-4 CreateAgent
+shape (explicit ``local.cwd``), agent management, and Shutdown. Useful as an
+"is it me or the bridge" baseline when your own adapter misbehaves, and as a
+quick check of a freshly downloaded bridge archive.
 
 Usage: python smoke.py [--bridge <path>] [--workspace <dir>]
 """
