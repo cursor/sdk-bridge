@@ -24,19 +24,18 @@ integration, or a one-off script.
 
 ## How to use this repository
 
+You can use this repository to create adapters in languages like Go, Rust,
+Java, and more. The way to do it: point a coding agent at this repository and
+tell it to follow [**Agent: start here**](#agent-start-here) below — a
+complete milestone-by-milestone build plan that takes the agent from codegen
+to a full, verified SDK for your language.
+
+- **Building an adapter for a new language?** Give a Cursor agent this
+  repository and the [**Agent: start here**](#agent-start-here) guide.
 - **Scripting agents from TypeScript or Python?** Use the official SDKs —
   [`@cursor/sdk`](https://www.npmjs.com/package/@cursor/sdk) on npm or
   [`cursor-sdk`](https://pypi.org/project/cursor-sdk/) on PyPI. You do not
   need this repository.
-- **Building an adapter for another language?** Pin the latest release of
-  this repository (the newest
-  [`vX.Y.Z` tag](https://github.com/cursor/sdk-bridge/tags)), generate code
-  from `proto/sdk/v1/` with [buf](https://buf.build), and follow the
-  protocol guide in [`docs/`](docs/). `examples/python-adapter/` is a
-  complete working reference.
-- **Using a Cursor agent to build the adapter?** Point it at this repository
-  and tell it to follow [**Agent: start here**](#agent-start-here) below — a
-  complete milestone-by-milestone build plan.
 
 ## Repository layout
 
