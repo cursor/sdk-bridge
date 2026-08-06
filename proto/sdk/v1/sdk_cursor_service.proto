@@ -11,14 +11,22 @@ option java_package = "com.cursor.sdk.v1";
 option ruby_package = "Cursor::Sdk::V1";
 option swift_prefix = "CursorSdkV1";
 
-// Cloud-only Cursor account and catalog APIs.
+// Cloud account and catalog APIs.
+//
+// These RPCs talk to Cursor Cloud using the caller's API key. They do not
+// require a local agent runtime.
 service SdkCursorService {
+  // Authenticated account identity for the supplied API key.
   rpc Me(MeRequest) returns (MeResponse);
+  // Models available to the authenticated account.
   rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+  // Repositories the authenticated account can use with cloud agents.
   rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
 }
 
 message CursorRequestOptions {
+  // Cursor API key. When empty, the bridge may fall back to process env
+  // (e.g. CURSOR_API_KEY) depending on how it was launched.
   string api_key = 1;
 }
 
