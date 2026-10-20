@@ -1,6 +1,6 @@
 {
   "protocol": "sdk.v1",
-  "sdkVersion": "1.0.39",
+  "sdkVersion": "1.0.40",
   "sourceRepo": "anysphere/everysphere",
-  "sourceCommit": "e2dcdff43e8006d38b71bbf6ffc42411d38ca529"
+  "sourceCommit": "863444c1b502763bc7e22777084d20d352d5cdf4"
 }
