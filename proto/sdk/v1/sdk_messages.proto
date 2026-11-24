@@ -450,7 +450,8 @@ message RunGitBranchInfo {
   string pr_url = 3;
 }
 
-// Stream message envelope for live Send and durable ObserveRun streams.
+// Stream message envelope for live Send / Summarize and durable ObserveRun
+// streams.
 message RunStreamMessage {
   oneof envelope {
     SdkMessage sdk_message = 1;

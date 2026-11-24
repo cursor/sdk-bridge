@@ -23,6 +23,10 @@ service SdkAgentService {
   rpc CloseAgent(CloseAgentRequest) returns (CloseAgentResponse);
   // Send a user message and stream run events until the run completes.
   rpc Send(SendRequest) returns (stream RunStreamMessage);
+  // Summarize a local agent's conversation in place and stream the summary
+  // run's events until it completes. Cloud agents fail with a configuration
+  // error.
+  rpc Summarize(SummarizeRequest) returns (stream RunStreamMessage);
   // Block until a live run reaches a terminal status and return its result.
   rpc WaitLiveRun(WaitLiveRunRequest) returns (WaitLiveRunResponse);
   // Fetch a point-in-time snapshot of a run.
@@ -35,6 +39,9 @@ service SdkAgentService {
   rpc ObserveRun(ObserveRunRequest) returns (stream RunStreamMessage);
   // Request cancellation of an in-flight run.
   rpc CancelRun(CancelRunRequest) returns (CancelRunResponse);
+  // Send text into a run. A cloud run that is no longer active queues the
+  // text as a follow-up and names that run.
+  rpc SteerRun(SteerRunRequest) returns (SteerRunResponse);
   // Fetch metadata for a single agent.
   rpc GetAgent(GetAgentRequest) returns (GetAgentResponse);
   // List agents visible to the caller.
@@ -97,6 +104,10 @@ message SendRequest {
   optional string idempotency_key = 4;
 }
 
+message SummarizeRequest {
+  string agent_id = 1;
+}
+
 message WaitLiveRunRequest {
   string run_id = 1;
 }
@@ -136,7 +147,8 @@ message GetRunConversationResponse {
 
 message ObserveRunRequest {
   string run_id = 1;
-  // Resume after this exclusive offset from a prior ObserveRun / Send stream.
+  // Resume after this exclusive offset from a prior ObserveRun / Send /
+  // Summarize stream.
   // When unset, the stream starts from the beginning of durable events.
   optional string after_offset = 2;
 }
@@ -148,6 +160,28 @@ message CancelRunRequest {
 }
 
 message CancelRunResponse {}
+
+message SteerRunRequest {
+  string run_id = 1;
+  string text = 2;
+  // The run's cloud agent. Lets the bridge load a cloud run it does not hold.
+  optional string agent_id = 3;
+}
+
+message SteerRunResponse {
+  enum Outcome {
+    OUTCOME_UNSPECIFIED = 0;
+    // The run has the text.
+    OUTCOME_COMPLETE_DELIVERED = 1;
+    // The run could not take the text; send it as a follow-up.
+    OUTCOME_REVERT_TO_FOLLOWUP = 2;
+    // The server queued the text as a follow-up. Do not send it again.
+    OUTCOME_QUEUED = 3;
+  }
+  Outcome outcome = 1;
+  // With OUTCOME_QUEUED: the run the follow-up starts, when the server names it.
+  RunSnapshot queued_run = 2;
+}
 
 message GetAgentRequest {
   string agent_id = 1;
