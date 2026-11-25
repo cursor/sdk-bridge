@@ -287,6 +287,9 @@ message CloudAgentOptions {
 message CloudEnvironment {
   CloudEnvironmentType type = 1;
   string name = 2;
+  // Cloud environment id from the environments API. Only
+  // CLOUD_ENVIRONMENT_TYPE_CLOUD uses it.
+  string id = 3;
 }
 
 message CloudRepository {
@@ -421,6 +424,9 @@ message RunSnapshot {
   optional string error_code = 10;
   // Human-readable failure message when the run ended in error.
   optional string error_message = 11;
+  // Request id of the run's first attempt, which Cursor support uses to look
+  // the run up. Unset when the SDK has no request id for the run.
+  optional string request_id = 12;
 }
 
 message RunResult {
@@ -438,6 +444,9 @@ message RunResult {
   optional string error_code = 10;
   // Human-readable failure message when the run ended in error.
   optional string error_message = 11;
+  // Request id of the run's first attempt, which Cursor support uses to look
+  // the run up. Unset when the SDK has no request id for the run.
+  optional string request_id = 12;
 }
 
 message RunGitInfo {
